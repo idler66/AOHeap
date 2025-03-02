@@ -27,7 +27,7 @@ public:
   AOHNodePosType nodePos;
   KeyType key;
   DataType data;
-  long int nid;
+  unsigned long nid;
   
   AOHeapNode() {
     init();
@@ -349,7 +349,7 @@ public:
     return mainTree == NULL;
   }
   
-  struct AOHeapNode<KeyType, DataType> * insert(KeyType& key, long int& nid) {
+  struct AOHeapNode<KeyType, DataType> * insert(KeyType& key, unsigned long& nid) {
     if(prevalue > key) prevalue = key;
     struct AOHeapNode<KeyType, DataType> * node;
     if(!AOHAllocDynamic) {
@@ -367,33 +367,42 @@ public:
     auto waitingTree = _consolidate();
     AOHeapNode<KeyType, DataType> * remainder = mainTree->getNext();
     mainTree->removeNext();
-    mainTree->init();
-    mainTree = NULL;
     
+    if(AOHAllocDynamic) {
+      free(mainTree);
+      mainTree = NULL;
+    } else {
+      mainTree->init();
+      mainTree = NULL;
+    }
+        
     auto leftTree = group2StandardTree(remainder);
     if(!leftTree && !waitingTree) {
-      if(AOHAllocDynamic) {
-        free(mainTree);
-      }
+//      if(AOHAllocDynamic) {
+//        free(mainTree);
+//      }
       return;
     }
     if(!leftTree && waitingTree) {
-      if(AOHAllocDynamic) {
-        free(mainTree);
-      }
+//      if(AOHAllocDynamic) {
+//        free(mainTree);
+//      }
       mainTree = waitingTree;
       mainTree->nodePos = AOHNodePosInMainTree;
       return;
     }
     if(leftTree && !waitingTree) {
-      if(AOHAllocDynamic) {
-        free(mainTree);
-      }
+//      if(AOHAllocDynamic) {
+//        free(mainTree);
+//      }
       mainTree = leftTree;
       mainTree->nodePos = AOHNodePosInMainTree;
       return;
     }
     
+//    if(AOHAllocDynamic) {
+//      free(mainTree);
+//    }
     if(waitingTree->key < leftTree->key) {
       std::swap(waitingTree, leftTree);
     }
