@@ -150,7 +150,12 @@ public:
   std::string name() {
     return "Pairing";
   }
-  
+  ~PairingTester() {
+    while(popOne()) {
+      assert(0);
+    }
+    handles.clear();
+  }
   PairingTester(unsigned long nc) {
     init(nc);
     handles.resize(nc);
@@ -217,7 +222,12 @@ public:
   std::string name() {
     return "DAry";
   }
-  
+  ~DAryTester() {
+    while(popOne()) {
+      assert(0);
+    }
+    handles.clear();
+  }
   DAryTester(unsigned long nc) {
     init(nc);
     handles.resize(nc);
@@ -287,6 +297,12 @@ public:
   std::string name() {
     return "Binomial";
   }
+  ~BinomialTester() {
+    while(popOne()) {
+      assert(0);
+    }
+    handles.clear();
+  }
   BinomialTester(unsigned long nc) {
     init(nc);
     handles.resize(nc);
@@ -355,6 +371,12 @@ public:
   std::string name() {
     return "Skew";
   }
+  ~SkewTester() {
+    while(popOne()) {
+      assert(0);
+    }
+    handles.clear();
+  }
   SkewTester(unsigned long nc) {
     init(nc);
     handles.resize(nc);
@@ -420,6 +442,12 @@ public:
   
   std::string name() {
     return "AOH";
+  }
+  ~AOHeapTester() {
+    while(popOne()) {
+      assert(0);
+    }
+//    handles.clear();
   }
   AOHeapTester(unsigned long nc) {
     NodePointer.resize(nc);
