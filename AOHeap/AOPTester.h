@@ -35,7 +35,6 @@ struct AOHBoostNode{
 template <typename KeyType, typename DataType>
 class AOPTester {
 public:
-  long int nodeNum;
   clock_t startTime;
   
   virtual std::string name() { assert(0); return ""; };
@@ -49,10 +48,6 @@ public:
   virtual void insert(KeyType& key, unsigned long& nid) {}
   
   virtual HeapMarkType getHeapMarkType() { return HeapAOHType; }
-
-  void init(unsigned long nc) {
-    nodeNum = nc;
-  }
   
   virtual bool empty() {
     return false;
@@ -76,11 +71,10 @@ public:
 
 template <typename KeyType, typename DataType>
 class FibonacciTester : public AOPTester<KeyType, DataType> {
-  using AOPTester<KeyType, DataType>::init;
 
   typedef boost::heap::fibonacci_heap<AOHBoostNode<KeyType, DataType>> AOPFibonacciHeap;
   AOPFibonacciHeap fibonacciHeap;
-  std::vector<typename AOPFibonacciHeap::handle_type> handles;
+  std::unordered_map<unsigned long, typename AOPFibonacciHeap::handle_type> handles;
 public:
   using AOPTester<KeyType, DataType>::startStatTime;
   using AOPTester<KeyType, DataType>::finishStatTime;
@@ -89,9 +83,7 @@ public:
     return "Fibonacci";
   }
   
-  FibonacciTester(unsigned long nc) {
-    init(nc);
-    handles.resize(nc);
+  FibonacciTester() {
   }
   bool empty() {
     return fibonacciHeap.empty();
@@ -102,37 +94,39 @@ public:
   void insert(KeyType& key, unsigned long& nid) {
     handles[nid] = fibonacciHeap.push({key, nid});
   }
+  
+  bool elementExist(unsigned long& nid) {
+    return handles.count(nid) != 0;
+  }
+  
   void decrease(unsigned long& nid, KeyType& keydlt) {
-    if(handles[nid]!=typename AOPFibonacciHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {handles[nid].node_->value.key - keydlt, nid};
-      fibonacciHeap.decrease(handles[nid], new_value);
-    }
+    printf("\n == decrease %ld   %f ==", nid, handles[nid].node_->value.key - keydlt);
+    AOHBoostNode<KeyType, DataType> new_value = {handles[nid].node_->value.key - keydlt, nid};
+    fibonacciHeap.decrease(handles[nid], new_value);
   }
   void increase(unsigned long& nid, KeyType& keydlt) {
-    if(handles[nid]!=typename AOPFibonacciHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {handles[nid].node_->value.key + keydlt, nid};
-      fibonacciHeap.increase(handles[nid], new_value);
-    }
+    printf("\n == increase %ld   %f ==", nid, handles[nid].node_->value.key + keydlt);
+    AOHBoostNode<KeyType, DataType> new_value = {handles[nid].node_->value.key + keydlt, nid};
+    fibonacciHeap.increase(handles[nid], new_value);
   }
   
   void decreaseWithKey(unsigned long& nid, KeyType& key) {
-    if(handles[nid]!=typename AOPFibonacciHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {key, nid};
-      fibonacciHeap.decrease(handles[nid], new_value);
-    }
+    AOHBoostNode<KeyType, DataType> new_value = {key, nid};
+    fibonacciHeap.decrease(handles[nid], new_value);
   }
   void increaseWithKey(unsigned long& nid, KeyType& key) {
-    if(handles[nid]!=typename AOPFibonacciHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {key, nid};
-      fibonacciHeap.increase(handles[nid], new_value);
-    }
+    AOHBoostNode<KeyType, DataType> new_value = {key, nid};
+    fibonacciHeap.increase(handles[nid], new_value);
   }
   
   bool popOne() {
     if(!empty()) {
       auto value = fibonacciHeap.top();
-      handles[value.nid] = typename AOPFibonacciHeap::handle_type();
+//      handles[value.nid] = typename AOPFibonacciHeap::handle_type();
+      handles.erase(value.nid);
       fibonacciHeap.pop();
+      assert(!elementExist(value.nid));
+      printf("\n == fibonacci pop %ld , %f ==", value.nid, value.key);
       return true;
     }
     return false;
@@ -145,11 +139,10 @@ public:
 
 template <typename KeyType, typename DataType>
 class PairingTester : public AOPTester<KeyType, DataType> {
-  using AOPTester<KeyType, DataType>::init;
 
   typedef boost::heap::pairing_heap<AOHBoostNode<KeyType, DataType>> AOPPairingHeap;
   AOPPairingHeap pairingHeap;
-  std::vector<typename AOPPairingHeap::handle_type> handles;
+  std::unordered_map<unsigned long, typename AOPPairingHeap::handle_type> handles;
 
 public:
   using AOPTester<KeyType, DataType>::startStatTime;
@@ -164,9 +157,7 @@ public:
     }
     handles.clear();
   }
-  PairingTester(unsigned long nc) {
-    init(nc);
-    handles.resize(nc);
+  PairingTester() {
   }
   bool empty() {
     return pairingHeap.empty();
@@ -177,30 +168,27 @@ public:
   void insert(KeyType& key, unsigned long& nid) {
     handles[nid] = pairingHeap.push({key, nid});
   }
+  bool elementExist(unsigned long& nid) {
+    return handles.count(nid) != 0;
+  }
   void decrease(unsigned long& nid, KeyType& keydlt) {
-    if(handles[nid]!=typename AOPPairingHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {handles[nid].node_->value.key - keydlt, nid};
-      pairingHeap.decrease(handles[nid], new_value);
-    }
+    printf("\n pairing decrease  %ld , %f", nid, (*(handles[nid])).key - keydlt);
+    AOHBoostNode<KeyType, DataType> new_value = {handles[nid].node_->value.key - keydlt, nid};
+    pairingHeap.decrease(handles[nid], new_value);
   }
   void increase(unsigned long& nid, KeyType& keydlt) {
-    if(handles[nid]!=typename AOPPairingHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {handles[nid].node_->value.key + keydlt, nid};
-      pairingHeap.increase(handles[nid], new_value);
-    }
+    printf("\n pairing increase  %ld , %f", nid, (*(handles[nid])).key + keydlt);
+    AOHBoostNode<KeyType, DataType> new_value = {handles[nid].node_->value.key + keydlt, nid};
+    pairingHeap.increase(handles[nid], new_value);
   }
   
   void decreaseWithKey(unsigned long& nid, KeyType& key) {
-    if(handles[nid]!=typename AOPPairingHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {key, nid};
-      pairingHeap.decrease(handles[nid], new_value);
-    }
+    AOHBoostNode<KeyType, DataType> new_value = {key, nid};
+    pairingHeap.decrease(handles[nid], new_value);
   }
   void increaseWithKey(unsigned long& nid, KeyType& key) {
-    if(handles[nid]!=typename AOPPairingHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {key, nid};
-      pairingHeap.increase(handles[nid], new_value);
-    }
+    AOHBoostNode<KeyType, DataType> new_value = {key, nid};
+    pairingHeap.increase(handles[nid], new_value);
   }
   
   bool popOne() {
@@ -208,6 +196,7 @@ public:
       auto value = pairingHeap.top();
       handles[value.nid] = typename AOPPairingHeap::handle_type();
       pairingHeap.pop();
+      printf("\n pairingHeap pop %ld , %f", value.nid, value.key);
       return true;
     }
     return false;
@@ -221,11 +210,10 @@ public:
 
 template <typename KeyType, typename DataType>
 class DAryTester : public AOPTester<KeyType, DataType> {
-  using AOPTester<KeyType, DataType>::init;
 
   typedef boost::heap::d_ary_heap<AOHBoostNode<KeyType, DataType>, boost::heap::arity<AOPDAryArity>, boost::heap::mutable_<true>> AOPDAryHeap;
   AOPDAryHeap DAryHeap;
-  std::vector<typename AOPDAryHeap::handle_type> handles;
+  std::unordered_map<unsigned long, typename AOPDAryHeap::handle_type> handles;
 
 public:
   using AOPTester<KeyType, DataType>::startStatTime;
@@ -240,9 +228,7 @@ public:
     }
     handles.clear();
   }
-  DAryTester(unsigned long nc) {
-    init(nc);
-    handles.resize(nc);
+  DAryTester() {
   }
   bool empty() {
     return DAryHeap.empty();
@@ -253,39 +239,37 @@ public:
   void insert(KeyType& key, unsigned long& nid) {
     handles[nid] = DAryHeap.push({key, nid});
   }
+  
+  bool elementExist(unsigned long& nid) {
+    return handles.count(nid) != 0;
+  }
+  
   void decrease(unsigned long& nid, KeyType& keydlt) {
-    if(handles[nid]!=typename AOPDAryHeap::handle_type()) {
-      assert((*(handles[nid])).nid==nid);
-      AOHBoostNode<KeyType, DataType> new_value = {(*(handles[nid])).key - keydlt, nid};
-      DAryHeap.decrease(handles[nid], new_value);
-    }
+    AOHBoostNode<KeyType, DataType> new_value = {(*(handles[nid])).key - keydlt, nid};
+    DAryHeap.decrease(handles[nid], new_value);
   }
   void increase(unsigned long& nid, KeyType& keydlt) {
-    if(handles[nid]!=typename AOPDAryHeap::handle_type()) {
-      auto key = (*(handles[nid])).key;
-      const AOHBoostNode<KeyType, DataType> new_value = {key + keydlt, nid};
-      DAryHeap.increase(handles[nid], new_value);
-//      fh.update(handles[nid], new_value);
-    }
+    printf("\n DAry increase  %ld , %f", nid, (*(handles[nid])).key + keydlt);
+
+    auto key = (*(handles[nid])).key;
+    const AOHBoostNode<KeyType, DataType> new_value = {key + keydlt, nid};
+    DAryHeap.increase(handles[nid], new_value);
   }
   
   void decreaseWithKey(unsigned long& nid, KeyType& key) {
-    if(handles[nid]!=typename AOPDAryHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {key, nid};
-      DAryHeap.decrease(handles[nid], new_value);
-    }
+    AOHBoostNode<KeyType, DataType> new_value = {key, nid};
+    DAryHeap.decrease(handles[nid], new_value);
   }
   void increaseWithKey(unsigned long& nid, KeyType& key) {
-    if(handles[nid]!=typename AOPDAryHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {key, nid};
-      DAryHeap.increase(handles[nid], new_value);
-    }
+    AOHBoostNode<KeyType, DataType> new_value = {key, nid};
+    DAryHeap.increase(handles[nid], new_value);
   }
   
   bool popOne() {
     if(!empty()) {
       auto value = DAryHeap.top();
-      handles[value.nid] =typename AOPDAryHeap::handle_type();
+      handles.erase(value.nid);//[value.nid] =typename AOPDAryHeap::handle_type();
+      printf("\n DAry pop %ld , %f", value.nid, value.key);
       DAryHeap.pop();
       return true;
     }
@@ -300,11 +284,10 @@ public:
 
 template <typename KeyType, typename DataType>
 class BinomialTester : public AOPTester<KeyType, DataType> {
-  using AOPTester<KeyType, DataType>::init;
 
   typedef boost::heap::binomial_heap<AOHBoostNode<KeyType, DataType>> AOPBinomialHeap;
   AOPBinomialHeap binomialHeap;
-  std::vector<typename AOPBinomialHeap::handle_type> handles;
+  std::unordered_map<unsigned long, typename AOPBinomialHeap::handle_type> handles;
 
 public:
   using AOPTester<KeyType, DataType>::startStatTime;
@@ -319,9 +302,7 @@ public:
     }
     handles.clear();
   }
-  BinomialTester(unsigned long nc) {
-    init(nc);
-    handles.resize(nc);
+  BinomialTester() {
   }
   bool empty() {
     return binomialHeap.empty();
@@ -332,38 +313,37 @@ public:
   void insert(KeyType& key, unsigned long& nid) {
     handles[nid] = binomialHeap.push({key, nid});
   }
+  
+  bool elementExist(unsigned long& nid) {
+    return handles.count(nid) != 0;
+  }
+  
   void decrease(unsigned long& nid, KeyType& keydlt) {
-    if(handles[nid]!=typename AOPBinomialHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {(*(handles[nid])).key - keydlt, nid};
-      binomialHeap.decrease(handles[nid], new_value);
-    }
+    AOHBoostNode<KeyType, DataType> new_value = {(*(handles[nid])).key - keydlt, nid};
+    binomialHeap.decrease(handles[nid], new_value);
   }
   void increase(unsigned long& nid, KeyType& keydlt) {
-    if(handles[nid]!=typename AOPBinomialHeap::handle_type()) {
-      auto key = (*(handles[nid])).key;
-      const AOHBoostNode<KeyType, DataType> new_value = {key + keydlt, nid};
-      binomialHeap.increase(handles[nid], new_value);
-//      fh.update(handles[nid], new_value);
-    }
+    auto key = (*(handles[nid])).key;
+    const AOHBoostNode<KeyType, DataType> new_value = {key + keydlt, nid};
+    binomialHeap.increase(handles[nid], new_value);
   }
   
   void decreaseWithKey(unsigned long& nid, KeyType& key) {
-    if(handles[nid]!=typename AOPBinomialHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {key, nid};
-      binomialHeap.decrease(handles[nid], new_value);
-    }
+    AOHBoostNode<KeyType, DataType> new_value = {key, nid};
+    binomialHeap.decrease(handles[nid], new_value);
   }
   void increaseWithKey(unsigned long& nid, KeyType& key) {
-    if(handles[nid]!=typename AOPBinomialHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {key, nid};
-      binomialHeap.increase(handles[nid], new_value);
-    }
+    AOHBoostNode<KeyType, DataType> new_value = {key, nid};
+    binomialHeap.increase(handles[nid], new_value);
   }
   
   bool popOne() {
     if(!empty()) {
       auto value = binomialHeap.top();
-      handles[value.nid] =typename AOPBinomialHeap::handle_type();
+//      handles[value.nid] =typename AOPBinomialHeap::handle_type();
+      handles.erase(value.nid);
+//      if(value.nid==6)
+      printf("\n binomial pop %ld ,%f", value.nid, value.key);
       binomialHeap.pop();
       return true;
     }
@@ -378,11 +358,10 @@ public:
 
 template <typename KeyType, typename DataType>
 class SkewTester : public AOPTester<KeyType, DataType> {
-  using AOPTester<KeyType, DataType>::init;
 
   typedef boost::heap::skew_heap<AOHBoostNode<KeyType, DataType>, boost::heap::mutable_<true>> AOPSkewHeap;
   AOPSkewHeap skewHeap;
-  std::vector<typename AOPSkewHeap::handle_type> handles;
+  std::unordered_map<unsigned long, typename AOPSkewHeap::handle_type> handles;
 
 public:
   using AOPTester<KeyType, DataType>::startStatTime;
@@ -397,9 +376,7 @@ public:
     }
     handles.clear();
   }
-  SkewTester(unsigned long nc) {
-    init(nc);
-    handles.resize(nc);
+  SkewTester() {
   }
   bool empty() {
     return skewHeap.empty();
@@ -408,41 +385,49 @@ public:
     return skewHeap.top();
   }
   void insert(KeyType& key, unsigned long& nid) {
+    printf("\n== skew insert %ld==", nid);
     handles[nid] = skewHeap.push({key, nid});
   }
+  
+  bool elementExist(unsigned long& nid) {
+    return handles.count(nid) != 0;
+  }
+  
   void decrease(unsigned long& nid, KeyType& keydlt) {
-    if(handles[nid]!=typename AOPSkewHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {(*(handles[nid])).key - keydlt, nid};
-      skewHeap.decrease(handles[nid], new_value);
-    }
+    printf("\n== skew decrease  %ld, dlt %f==", nid, keydlt);
+    assert(elementExist(nid));
+    AOHBoostNode<KeyType, DataType> new_value = {(*(handles[nid])).key - keydlt, nid};
+    skewHeap.decrease(handles[nid], new_value);
   }
   void increase(unsigned long& nid, KeyType& keydlt) {
-    if(handles[nid]!=typename AOPSkewHeap::handle_type()) {
-      auto key = (*(handles[nid])).key;
-      const AOHBoostNode<KeyType, DataType> new_value = {key + keydlt, nid};
-      skewHeap.increase(handles[nid], new_value);
-//      fh.update(handles[nid], new_value);
-    }
+    printf("\n== skew increase  %ld, dlt %f==", nid, keydlt);
+    assert(elementExist(nid));
+    auto key = (*(handles[nid])).key;
+    const AOHBoostNode<KeyType, DataType> new_value = {key + keydlt, nid};
+    skewHeap.increase(handles[nid], new_value);
   }
   
   void decreaseWithKey(unsigned long& nid, KeyType& key) {
-    if(handles[nid]!=typename AOPSkewHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {key, nid};
-      skewHeap.decrease(handles[nid], new_value);
-    }
+    printf("\n== skew decrease  %ld, key %f==", nid, key);
+    assert(elementExist(nid));
+    AOHBoostNode<KeyType, DataType> new_value = {key, nid};
+    skewHeap.decrease(handles[nid], new_value);
   }
   void increaseWithKey(unsigned long& nid, KeyType& key) {
-    if(handles[nid]!=typename AOPSkewHeap::handle_type()) {
-      AOHBoostNode<KeyType, DataType> new_value = {key, nid};
-      skewHeap.increase(handles[nid], new_value);
-    }
+    printf("\n==skew increase  %ld, key %f==", nid, key);
+    assert(elementExist(nid));
+    AOHBoostNode<KeyType, DataType> new_value = {key, nid};
+    skewHeap.increase(handles[nid], new_value);
   }
   
   bool popOne() {
     if(!empty()) {
       auto value = skewHeap.top();
-      handles[value.nid] =typename AOPSkewHeap::handle_type();
+//      handles[value.nid] =typename AOPSkewHeap::handle_type();
+      handles.erase(value.nid);
+      printf("\n skew pop %ld", value.nid);
       skewHeap.pop();
+      assert(!elementExist(value.nid));
       return true;
     }
     return false;
@@ -455,10 +440,9 @@ public:
 
 template <typename KeyType, typename DataType>
 class AOHeapTester : public AOPTester<KeyType, DataType> {
-  using AOPTester<KeyType, DataType>::init;
- 
+  
   AOHeap<KeyType, DataType> * aoHeap;
-  std::vector<AOHeapNode<KeyType, DataType>*> NodePointer;
+  std::unordered_map<unsigned long, AOHeapNode<KeyType, DataType>*> NodePointer;
 public:
   
   using AOPTester<KeyType, DataType>::startStatTime;
@@ -473,10 +457,8 @@ public:
     }
 //    handles.clear();
   }
-  AOHeapTester(unsigned long nc) {
-    NodePointer.resize(nc);
-    init(nc);
-    aoHeap = new AOHeap<KeyType, DataType>(nc);
+  AOHeapTester() {
+    aoHeap = new AOHeap<KeyType, DataType>();
   }
   bool empty() {
     return aoHeap->empty();
@@ -485,57 +467,56 @@ public:
     return aoHeap->top();
   }
   void insert(KeyType& key, unsigned long& nid) {
+    printf("\n== aop insert  %ld, key %f==", nid, key);
     NodePointer[nid] = aoHeap->insert(key, nid);
   }
   
-  bool inserted(unsigned long& nid) {
-    return NodePointer[nid] != NULL;
-  };
+  bool elementExist(unsigned long& nid) {
+    return NodePointer.count(nid) != 0;
+  }
   
   void decrease(unsigned long& nid, KeyType& keydlt) {
+    printf("\n== aop decrease  %ld, keydlt %f==", nid, keydlt);
 //    if(!keyChangeNum)return;
+    assert(elementExist(nid));
     if(keydlt == 0) return;
     AOHeapNode<KeyType, DataType>* node = NodePointer[nid];
-    if(node) {
-      node->key -= keydlt;
-      aoHeap->decrease(node);
-    }
+    node->key -= keydlt;
+    aoHeap->decrease(node);
   }
   void increase(unsigned long& nid, KeyType& keydlt) {
 //    if(!keyChangeNum)return;
+    printf("\n== aop increase  %ld, keydlt %f==", nid, keydlt);
+    assert(elementExist(nid));
     AOHeapNode<KeyType, DataType>* node = NodePointer[nid];
-    if(node) {
-      node->key += keydlt;
-      aoHeap->increase(node);
-    }
+    node->key += keydlt;
+    aoHeap->increase(node);
   }
   
   void decreaseWithKey(unsigned long& nid, KeyType& key) {
+    printf("\n== aop decrease  %ld, key %f==", nid, key);
+    assert(elementExist(nid));
     AOHeapNode<KeyType, DataType>* node = NodePointer[nid];
-    if(node) {
-      node->key = key;
-      aoHeap->decrease(node);
-    }
+    node->key = key;
+    aoHeap->decrease(node);
   }
   void increaseWithKey(unsigned long& nid, KeyType& key) {
+    printf("\n== aop increase  %ld, key %f==", nid, key);
+    assert(elementExist(nid));
     AOHeapNode<KeyType, DataType>* node = NodePointer[nid];
-    if(node) {
-      node->key = key;
-      aoHeap->increase(node);
-    }
+    node->key = key;
+    aoHeap->increase(node);
   }
   
   bool popOne() {
     if(!empty()) {
       auto node = aoHeap->top();
-      long int key = node->key;
-      NodePointer[node->nid] = NULL;
-      if(aoHeap->prevalue <= key){
-        aoHeap->prevalue = key;
-      } else {
-//        assert(0);
-      }
+//      long int key = node->key;
+//      NodePointer[node->nid] = NULL;
+      printf("\n== aop pop  %ld", node->nid);
+      NodePointer.erase(node->nid);
       aoHeap->pop();
+      assert(!elementExist(node->nid));
       return true;
     }
     return false;
