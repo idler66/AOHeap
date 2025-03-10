@@ -15,7 +15,9 @@
 #include <boost/heap/skew_heap.hpp>
 
 #include "AOHeap.h"
+#include "AOPSeqsGenerator.h"
 
+#include "CommonDef.h"
 
 static const long int  AOPDAryArity = 3;
 static const bool AOPStatClocks = true;
@@ -45,6 +47,8 @@ public:
   virtual void increaseWithKey(unsigned long& nid, KeyType& key) {}
 
   virtual void insert(KeyType& key, unsigned long& nid) {}
+  
+  virtual HeapMarkType getHeapMarkType() { return HeapAOHType; }
 
   void init(unsigned long nc) {
     nodeNum = nc;
@@ -133,6 +137,10 @@ public:
     }
     return false;
   }
+    
+  HeapMarkType getHeapMarkType() {
+    return HeapFibonacciType;
+  }
 };
 
 template <typename KeyType, typename DataType>
@@ -203,6 +211,10 @@ public:
       return true;
     }
     return false;
+  }
+  
+  HeapMarkType getHeapMarkType() {
+    return HeapPairingType;
   }
 };
 
@@ -279,6 +291,10 @@ public:
     }
     return false;
   }
+  
+  HeapMarkType getHeapMarkType() {
+    return HeapDAryType;
+  }
 };
  
 
@@ -352,6 +368,10 @@ public:
       return true;
     }
     return false;
+  }
+  
+  HeapMarkType getHeapMarkType() {
+    return HeapBinomialType;
   }
 };
 
@@ -427,6 +447,10 @@ public:
     }
     return false;
   }
+  
+  HeapMarkType getHeapMarkType() {
+    return HeapSkewType;
+  }
 };
 
 template <typename KeyType, typename DataType>
@@ -463,6 +487,10 @@ public:
   void insert(KeyType& key, unsigned long& nid) {
     NodePointer[nid] = aoHeap->insert(key, nid);
   }
+  
+  bool inserted(unsigned long& nid) {
+    return NodePointer[nid] != NULL;
+  };
   
   void decrease(unsigned long& nid, KeyType& keydlt) {
 //    if(!keyChangeNum)return;
@@ -511,6 +539,10 @@ public:
       return true;
     }
     return false;
+  }
+  
+  HeapMarkType getHeapMarkType() {
+    return HeapAOHType;
   }
 };
 

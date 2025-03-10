@@ -214,11 +214,14 @@ private:
     AOHeapNode<KeyType, DataType> * end = NULL;
     while(visitor) {
       bool hasItems = false;
+      if(visitor->key <= sentinel->key) hasItems = true;
       while(visitor && visitor->key <= sentinel->key) {
-        visitor->swapBroAndNext();
+//        visitor->swapBroAndNext();
+//        end = visitor;
+//        visitor = visitor->getBro();
         end = visitor;
-        visitor = visitor->getBro();
-        hasItems = true;
+        visitor = visitor->getNext();
+        end->swapBroAndNext();
       }
       if(hasItems) {
         batchInsert(sentinel, remainder, end);
@@ -375,7 +378,7 @@ public:
       mainTree->init();
       mainTree = NULL;
     }
-        
+    
     auto leftTree = group2StandardTree(remainder);
     if(!leftTree && !waitingTree) {
 //      if(AOHAllocDynamic) {
@@ -462,7 +465,14 @@ public:
     if(mainNode->nodePos==AOHNodePosInWaitingList) {
       if(mainTree->key > mainNode->key) {
         _pickoutFromWaitingList(mainNode);
-        push(mainNode);
+//        push(mainNode);
+        mainNode->nodePos = AOHNodePosInMainTree;
+        mainTree->nodePos = AOHNodePosInWaitingList;
+        
+        mainTree->setBro(waitingList);
+        waitingList = mainTree;
+        
+        mainTree = mainNode;
       }
       return;
     }

@@ -14,7 +14,7 @@ plt.plot(x, y3, label='Fibonacci', marker='^')
 
 # 设置图表
 plt.title('Performance Comparison of Algorithms')
-plt.xlabel('Input Size')
+plt.xlabel('log10(number of nodes)')
 plt.ylabel('Performance Metric')
 plt.legend()
 plt.grid()
