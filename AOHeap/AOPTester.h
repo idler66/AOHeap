@@ -15,7 +15,7 @@
 #include <boost/heap/skew_heap.hpp>
 
 #include "AOHeap.h"
-#include "AOPSeqsGenerator.h"
+#include "NaiveSeqsGenerator.h"
 
 #include "CommonDef.h"
 
@@ -630,6 +630,75 @@ public:
       if(PerMethodStatClocks) {
         SharedHeapManager().update(clock()-start, MethodMarkPopType, getHeapMarkType());
       }
+      return true;
+    }
+    return false;
+  }
+  
+  HeapMarkType getHeapMarkType() {
+    return HeapAOHType;
+  }
+  void checkDataItem(unsigned long& nid, double& key) {
+    nid = aoHeap->top()->nid;
+    key = aoHeap->top()->key;
+  }
+};
+
+
+template <typename KeyType>
+class GenHeapTester : public AOPTester<KeyType> {
+  
+  AOHeap<KeyType> * aoHeap;
+  std::unordered_map<unsigned long, AOHeapNode<KeyType>*> NodePointer;
+public:
+  
+  using AOPTester<KeyType>::startStatTime;
+  using AOPTester<KeyType>::finishStatTime;
+  
+  std::string name() {
+    return "AOH";
+  }
+  ~GenHeapTester() {
+    while(popOne()) {
+      assert(0);
+    }
+  }
+  GenHeapTester() {
+    aoHeap = new AOHeap<KeyType>();
+  }
+  bool empty() {
+    return aoHeap->empty();
+  }
+  auto top() {
+    return aoHeap->top();
+  }
+  void insert(KeyType& key, unsigned long& nid) {
+    auto handle = aoHeap->insert(key, nid);
+    NodePointer[nid] = handle;
+  }
+  
+  bool elementExist(unsigned long& nid) {
+    return NodePointer.count(nid) != 0;
+  }
+  
+  void decrease(unsigned long& nid, KeyType& keydlt) {
+    if(keydlt == 0) return;
+    AOHeapNode<KeyType>* node = NodePointer[nid];
+    node->key -= keydlt;
+    aoHeap->decrease(node);
+  }
+  
+  void increase(unsigned long& nid, KeyType& keydlt) {
+    AOHeapNode<KeyType>* node = NodePointer[nid];
+    node->key += keydlt;
+    aoHeap->increase(node);
+  }
+  
+  bool popOne() {
+    if(!empty()) {
+      auto node = aoHeap->top();
+      NodePointer.erase(node->nid);
+      aoHeap->pop();
       return true;
     }
     return false;
