@@ -100,9 +100,9 @@ void writeAOP(std::string methodname, std::ofstream& file,
       << clocks/((float)AOPNodeNum*counter) << "," << clock() << "," << std::endl;
 }
 
-template <typename KeyType, typename DataType>
+template <typename KeyType>
 void printHeapResult(std::ofstream& file, unsigned char ops,
-                     AOPTester<KeyType, DataType>& tester, std::string method) {
+                     AOPTester<KeyType>& tester, std::string method) {
   clock_t clock = 0;
   if (ops&AOPOpTypeIns) {
     clock += tester.insertTime;
@@ -119,22 +119,22 @@ void printHeapResult(std::ofstream& file, unsigned char ops,
   writeAOP(method, file, ops, clock);
 }
 
-template <typename KeyType, typename DataType>
+template <typename KeyType>
 void printTimes(std::ofstream& file, unsigned char ops,
-               PairingTester<KeyType, DataType>& pairing,
-                FibonacciTester<KeyType, DataType>& fibonacci,
-               DAryTester<KeyType, DataType>& dary,
-                BinomialTester<KeyType, DataType>& binomial,
-               SkewTester<KeyType, DataType>& skew,
-                AOHeapTester<KeyType, DataType>& AOPacent,
-               BinaryHeapTester<KeyType, DataType>& binary) {
-  printHeapResult<KeyType, DataType>(file, ops, pairing, "pairing");
-  printHeapResult<KeyType, DataType>(file, ops, fibonacci, "fibonacci");
-  printHeapResult<KeyType, DataType>(file, ops, dary, "dary");
-  printHeapResult<KeyType, DataType>(file, ops, binomial, "binomial");
-  printHeapResult<KeyType, DataType>(file, ops, skew, "skew");
-  printHeapResult<KeyType, DataType>(file, ops, AOPacent, "AOPacent");
-  printHeapResult<KeyType, DataType>(file, ops, binary, "binary");
+               PairingTester<KeyType>& pairing,
+                FibonacciTester<KeyType>& fibonacci,
+               DAryTester<KeyType>& dary,
+                BinomialTester<KeyType>& binomial,
+               SkewTester<KeyType>& skew,
+                AOHeapTester<KeyType>& AOPacent,
+               BinaryHeapTester<KeyType>& binary) {
+  printHeapResult<KeyType>(file, ops, pairing, "pairing");
+  printHeapResult<KeyType>(file, ops, fibonacci, "fibonacci");
+  printHeapResult<KeyType>(file, ops, dary, "dary");
+  printHeapResult<KeyType>(file, ops, binomial, "binomial");
+  printHeapResult<KeyType>(file, ops, skew, "skew");
+  printHeapResult<KeyType>(file, ops, AOPacent, "AOPacent");
+  printHeapResult<KeyType>(file, ops, binary, "binary");
 }
 
 #endif /* AOPFile_h */

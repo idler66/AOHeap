@@ -18,14 +18,14 @@ enum AOHNodePosType : unsigned char {
   AOHNodePosInWaitingList = 4,
 };
 
-template <typename KeyType, typename DataType>
+template <typename KeyType>
 struct AOHeapNode {
 private:
 public:
   struct AOHeapNode *bro, *pre, *next;
   AOHNodePosType nodePos;
   KeyType key;
-  DataType data;
+//  DataType data;
   unsigned long nid;
   
   AOHeapNode() {
@@ -99,35 +99,35 @@ public:
   }
 };
 
-template <typename KeyType, typename DataType>
+template <typename KeyType>
 class AOHeap {
 private:
-  AOHeapNode<KeyType, DataType> * mainTree;
-  AOHeapNode<KeyType, DataType> * waitingList;
-  AOHeapNode<KeyType, DataType>* NodeList;
+  AOHeapNode<KeyType> * mainTree;
+  AOHeapNode<KeyType> * waitingList;
+  AOHeapNode<KeyType>* NodeList;
   long int mergeHeight;
   long int mergeNum;
 
-  void reshape(AOHeapNode<KeyType, DataType>* root) {
-    AOHeapNode<KeyType, DataType> * visitor = root;
+  void reshape(AOHeapNode<KeyType>* root) {
+    AOHeapNode<KeyType> * visitor = root;
     while(visitor) {
       visitor->swapBroAndNext();
       visitor = visitor->getBro();
     }
   }
   
-  void batchInsert(AOHeapNode<KeyType, DataType> * sentinel,
-                       AOHeapNode<KeyType, DataType> * start,
-                       AOHeapNode<KeyType, DataType> * end) {
-    AOHeapNode<KeyType, DataType> * root = sentinel->getPre();
+  void batchInsert(AOHeapNode<KeyType> * sentinel,
+                       AOHeapNode<KeyType> * start,
+                       AOHeapNode<KeyType> * end) {
+    AOHeapNode<KeyType> * root = sentinel->getPre();
 //    sentinel->removePre();
     end->setBro(sentinel);
     root->setNext(start);
   }
   
-  void appendToLeft(AOHeapNode<KeyType, DataType> * x,
-                  AOHeapNode<KeyType, DataType> * pre,
-                  AOHeapNode<KeyType, DataType> * after) {
+  void appendToLeft(AOHeapNode<KeyType> * x,
+                  AOHeapNode<KeyType> * pre,
+                  AOHeapNode<KeyType> * after) {
     if(after) {
       after->removePre();
       x->setBro(after);
@@ -135,13 +135,13 @@ private:
     pre->setNext(x);
   }
   
-  void setHeader(AOHeapNode<KeyType, DataType>* h) {
+  void setHeader(AOHeapNode<KeyType>* h) {
     h->nodePos = AOHNodePosInMainTree;
     mainTree = h;
   }
   
-  AOHeapNode<KeyType, DataType>* meld(AOHeapNode<KeyType, DataType>* first,
-                                      AOHeapNode<KeyType, DataType>* second) {
+  AOHeapNode<KeyType>* meld(AOHeapNode<KeyType>* first,
+                                      AOHeapNode<KeyType>* second) {
     if(second) second->nodePos = AOHNodePosInMainTree;
     if(!first) {
       return second;
@@ -150,7 +150,7 @@ private:
       std::swap(first, second);
     }
     long height = 1;
-    AOHeapNode<KeyType, DataType>* mhd = first;
+    AOHeapNode<KeyType>* mhd = first;
     while(mhd->getNext() && mhd->getNext()->key < second->key) {
       height++;
       mhd = mhd->getNext();
@@ -164,7 +164,7 @@ private:
     return first;
   }
   
-  void push(AOHeapNode<KeyType, DataType>* h) {//merge with meld
+  void push(AOHeapNode<KeyType>* h) {//merge with meld
     h->nodePos = AOHNodePosInMainTree;
     if(!mainTree) {
       mainTree = h;
@@ -174,7 +174,7 @@ private:
       std::swap(h, mainTree);
     }
     long height = 1;
-    AOHeapNode<KeyType, DataType>* mhd = mainTree;
+    AOHeapNode<KeyType>* mhd = mainTree;
     while(mhd->getNext() && mhd->getNext()->key < h->key) {
       mhd = mhd->getNext();
       height++;
@@ -187,9 +187,9 @@ private:
     }
   }
 
-  AOHeapNode<KeyType, DataType> * group2StandardTree(AOHeapNode<KeyType, DataType> * remainder) {
+  AOHeapNode<KeyType> * group2StandardTree(AOHeapNode<KeyType> * remainder) {
     if(!remainder) return NULL;
-    AOHeapNode<KeyType, DataType> * stdtree = remainder;
+    AOHeapNode<KeyType> * stdtree = remainder;
     if(stdtree->getBro()==NULL || stdtree->getNext()==NULL) {
       if(stdtree->getNext()==NULL) {
         stdtree->moveBro2Next();
@@ -203,13 +203,13 @@ private:
       }
     }
     
-    AOHeapNode<KeyType, DataType> * visitor = remainder;
-    AOHeapNode<KeyType, DataType> * sentinel = stdtree->getNext();
+    AOHeapNode<KeyType> * visitor = remainder;
+    AOHeapNode<KeyType> * sentinel = stdtree->getNext();
     if(!sentinel) {
       stdtree->setNext(remainder);
       return stdtree;
     }
-    AOHeapNode<KeyType, DataType> * end = NULL;
+    AOHeapNode<KeyType> * end = NULL;
     while(visitor) {
       bool hasItems = false;
       if(visitor->key <= sentinel->key) hasItems = true;
@@ -236,10 +236,10 @@ private:
     return stdtree;
   }
   
-AOHeapNode<KeyType, DataType>* _consolidate() {
+AOHeapNode<KeyType>* _consolidate() {
   long int counter = 1;
-  AOHeapNode<KeyType, DataType>* group = NULL;
-  AOHeapNode<KeyType, DataType>* sum = NULL;
+  AOHeapNode<KeyType>* group = NULL;
+  AOHeapNode<KeyType>* sum = NULL;
   while (waitingList!=NULL) {
     auto local = waitingList;
     waitingList = waitingList->getBro();
@@ -260,7 +260,7 @@ AOHeapNode<KeyType, DataType>* _consolidate() {
   return sum;
 }
 
-void _insert(AOHeapNode<KeyType, DataType> *h) {
+void _insert(AOHeapNode<KeyType> *h) {
   if(!mainTree) {
     setHeader(h);
     return;
@@ -277,7 +277,7 @@ void _insert(AOHeapNode<KeyType, DataType> *h) {
   waitingList = h;
 }
 
-void pickOut(AOHeapNode<KeyType, DataType> *mainNode) {
+void pickOut(AOHeapNode<KeyType> *mainNode) {
   if (mainNode == mainTree) {
     mainTree = NULL;
     return ;
@@ -289,7 +289,7 @@ void pickOut(AOHeapNode<KeyType, DataType> *mainNode) {
   }
 }
 
-AOHeapNode<KeyType, DataType>* _pickoutFromWaitingList(AOHeapNode<KeyType, DataType> *node) {
+AOHeapNode<KeyType>* _pickoutFromWaitingList(AOHeapNode<KeyType> *node) {
   if(node==waitingList) {
     waitingList = waitingList->bro;
     if(waitingList) waitingList->pre = NULL;
@@ -305,9 +305,9 @@ AOHeapNode<KeyType, DataType>* _pickoutFromWaitingList(AOHeapNode<KeyType, DataT
   return node;
 }
 
-AOHeapNode<KeyType, DataType> * _pickOutFromMainTree(AOHeapNode<KeyType, DataType>* x) {
-  AOHeapNode<KeyType, DataType> * pre = x->getPre();
-  AOHeapNode<KeyType, DataType>* bro = x->getBro();
+AOHeapNode<KeyType> * _pickOutFromMainTree(AOHeapNode<KeyType>* x) {
+  AOHeapNode<KeyType> * pre = x->getPre();
+  AOHeapNode<KeyType>* bro = x->getBro();
   if(pre->getNext() == x) {
     x->removePre();
     x->removeBro();
@@ -333,15 +333,15 @@ public:
   ~AOHeap() {
   }
   
-  AOHeapNode<KeyType, DataType>* top() {
+  AOHeapNode<KeyType>* top() {
     return mainTree;
   }
   bool empty() {
     return mainTree == NULL;
   }
   
-  struct AOHeapNode<KeyType, DataType> * insert(KeyType& key, unsigned long& nid) {
-    struct AOHeapNode<KeyType, DataType> * node = new AOHeapNode<KeyType, DataType>();
+  struct AOHeapNode<KeyType> * insert(KeyType& key, unsigned long& nid) {
+    struct AOHeapNode<KeyType> * node = new AOHeapNode<KeyType>();
     node->key = key;
     node->nid = nid;
     _insert(node);
@@ -350,7 +350,7 @@ public:
   
   void pop() {
     auto waitingTree = _consolidate();
-    AOHeapNode<KeyType, DataType> * remainder = mainTree->getNext();
+    AOHeapNode<KeyType> * remainder = mainTree->getNext();
     mainTree->removeNext();
     free(mainTree);
     mainTree = NULL;
@@ -379,9 +379,9 @@ public:
     waitingList->nodePos = AOHNodePosInWaitingList;
   }
   
-  void increase(AOHeapNode<KeyType, DataType>* node) {
-    AOHeapNode<KeyType, DataType>* tree = NULL;
-    AOHeapNode<KeyType, DataType>* group = NULL;
+  void increase(AOHeapNode<KeyType>* node) {
+    AOHeapNode<KeyType>* tree = NULL;
+    AOHeapNode<KeyType>* group = NULL;
     bool consolidate = false;
     if(node == mainTree) consolidate = true;
     if(node == mainTree || node->nodePos == AOHNodePosInWaitingList) {
@@ -419,7 +419,7 @@ public:
     }
   }
   
-  void decrease(AOHeapNode<KeyType, DataType>* mainNode) {
+  void decrease(AOHeapNode<KeyType>* mainNode) {
     if (mainNode == mainTree) {
       return;
     }
