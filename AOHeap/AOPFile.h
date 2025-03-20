@@ -76,7 +76,7 @@ std::ofstream openAOPFile(unsigned char ops, std::string name) {
 void writeAOP(std::string methodname, std::ofstream& file,
               unsigned char ops, clock_t clocks) {
   std::string opsName = getOpFlags(ops);
-  long int counter = 0;
+  int counter = 0;
   if (StatType == AOPStatNodeAvg) {
     counter = 1;
   } else {

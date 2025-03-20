@@ -19,13 +19,13 @@
 
 #include "CommonDef.h"
 
-static const long int  AOPDAryArity = 3;
+static const int  AOPDAryArity = 3;
 static const bool PerMethodStatClocks = true;
 
 template <typename KeyType>
 struct AOHBoostNode{
   KeyType key;
-  unsigned long nid;
+  int nid;
   bool operator<(const AOHBoostNode& other) const {
           return key > other.key;
   }
@@ -41,14 +41,14 @@ public:
   
   virtual std::string name() { assert(0); return ""; };
   
-  virtual void decrease(unsigned long& nid, KeyType& keydlt) {}
-  virtual void increase(unsigned long& nid, KeyType& keydlt) {}
+  virtual void decrease(int& nid, KeyType& keydlt) {}
+  virtual void increase(int& nid, KeyType& keydlt) {}
   
-  virtual void insert(KeyType& key, unsigned long& nid) {}
+  virtual void insert(KeyType& key, int& nid) {}
   
   virtual HeapMarkType getHeapMarkType() { return HeapAOHType; }
   
-  virtual void checkDataItem(unsigned long& nid, double& key) {}
+  virtual void checkDataItem(int& nid, int& key) {}
   
   virtual bool empty() {
     return false;
@@ -75,7 +75,7 @@ class FibonacciTester : public AOPTester<KeyType> {
 
   typedef boost::heap::fibonacci_heap<AOHBoostNode<KeyType>> AOPFibonacciHeap;
   AOPFibonacciHeap fibonacciHeap;
-  std::unordered_map<unsigned long, typename AOPFibonacciHeap::handle_type> handles;
+  std::unordered_map<int, typename AOPFibonacciHeap::handle_type> handles;
 public:
   using AOPTester<KeyType>::startStatTime;
   using AOPTester<KeyType>::finishStatTime;
@@ -93,7 +93,7 @@ public:
     return fibonacciHeap.top();
   }
   
-  void insert(KeyType& key, unsigned long& nid) {
+  void insert(KeyType& key, int& nid) {
     clock_t start;
     if(PerMethodStatClocks) {
       start = clock();
@@ -105,11 +105,11 @@ public:
     handles[nid] = handle;
   }
   
-  bool elementExist(unsigned long& nid) {
+  bool elementExist(int& nid) {
     return handles.count(nid) != 0;
   }
   
-  void decrease(unsigned long& nid, KeyType& keydlt) {
+  void decrease(int& nid, KeyType& keydlt) {
     AOHBoostNode<KeyType> new_value = {handles[nid].node_->value.key - keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
@@ -120,7 +120,7 @@ public:
       SharedHeapManager().update(clock()-start, MethodMarkDecreaseType, getHeapMarkType());
     }
   }
-  void increase(unsigned long& nid, KeyType& keydlt) {
+  void increase(int& nid, KeyType& keydlt) {
     AOHBoostNode<KeyType> new_value = {handles[nid].node_->value.key + keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
@@ -136,7 +136,7 @@ public:
     if(!empty()) {
       auto value = fibonacciHeap.top();
 //      handles[value.nid] = typename AOPFibonacciHeap::handle_type();
-      double key = value.key;
+      int key = value.key;
       handles.erase(value.nid);
       clock_t start;
       if(PerMethodStatClocks) {
@@ -155,7 +155,7 @@ public:
     return HeapFibonacciType;
   }
    
-  void checkDataItem(unsigned long& nid, double& key) {
+  void checkDataItem(int& nid, int& key) {
     nid = fibonacciHeap.top().nid;
     key = fibonacciHeap.top().key;
   }
@@ -166,7 +166,7 @@ class PairingTester : public AOPTester<KeyType> {
 
   typedef boost::heap::pairing_heap<AOHBoostNode<KeyType>> AOPPairingHeap;
   AOPPairingHeap pairingHeap;
-  std::unordered_map<unsigned long, typename AOPPairingHeap::handle_type> handles;
+  std::unordered_map<int, typename AOPPairingHeap::handle_type> handles;
 
 public:
   using AOPTester<KeyType>::startStatTime;
@@ -189,7 +189,7 @@ public:
   auto top() {
     return pairingHeap.top();
   }
-  void insert(KeyType& key, unsigned long& nid) {
+  void insert(KeyType& key, int& nid) {
     clock_t start;
     if(PerMethodStatClocks) {
       start = clock();
@@ -200,10 +200,10 @@ public:
     }
     handles[nid] = handle;
   }
-  bool elementExist(unsigned long& nid) {
+  bool elementExist(int& nid) {
     return handles.count(nid) != 0;
   }
-  void decrease(unsigned long& nid, KeyType& keydlt) {
+  void decrease(int& nid, KeyType& keydlt) {
     AOHBoostNode<KeyType> new_value = {handles[nid].node_->value.key - keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
@@ -214,7 +214,7 @@ public:
       SharedHeapManager().update(clock()-start, MethodMarkDecreaseType, getHeapMarkType());
     }
   }
-  void increase(unsigned long& nid, KeyType& keydlt) {
+  void increase(int& nid, KeyType& keydlt) {
     AOHBoostNode<KeyType> new_value = {handles[nid].node_->value.key + keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
@@ -247,7 +247,7 @@ public:
     return HeapPairingType;
   }
   
-  void checkDataItem(unsigned long& nid, double& key) {
+  void checkDataItem(int& nid, int& key) {
     nid = pairingHeap.top().nid;
     key = pairingHeap.top().key;
   }
@@ -257,13 +257,13 @@ public:
 template <typename KeyType>
 class DAryTester : public AOPTester<KeyType> {
   
-  std::vector<double> seqsKey;
-  std::vector<unsigned long> seqsID;
-  std::vector<unsigned long> seqsType;
+  std::vector<int> seqsKey;
+  std::vector<int> seqsID;
+  std::vector<int> seqsType;
 
   typedef boost::heap::d_ary_heap<AOHBoostNode<KeyType>, boost::heap::arity<AOPDAryArity>, boost::heap::mutable_<true>, boost::heap::compare<AOHBoostNode<KeyType>>> AOPDAryHeap;
   AOPDAryHeap DAryHeap;
-  std::unordered_map<unsigned long, typename AOPDAryHeap::handle_type> handles;
+  std::unordered_map<int, typename AOPDAryHeap::handle_type> handles;
 
 public:
   using AOPTester<KeyType>::startStatTime;
@@ -287,7 +287,7 @@ public:
     return DAryHeap.top();
   }
   
-  void insert(KeyType& key, unsigned long& nid) {
+  void insert(KeyType& key, int& nid) {
     clock_t start;
     if(PerMethodStatClocks) {
       start = clock();
@@ -299,11 +299,11 @@ public:
     handles[nid] = handle;
   }
   
-  bool elementExist(unsigned long& nid) {
+  bool elementExist(int& nid) {
     return handles.count(nid) != 0;
   }
   
-  void decrease(unsigned long& nid, KeyType& keydlt) {
+  void decrease(int& nid, KeyType& keydlt) {
     AOHBoostNode<KeyType> new_value = {(*(handles[nid])).key - keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
@@ -314,7 +314,7 @@ public:
       SharedHeapManager().update(clock()-start, MethodMarkDecreaseType, getHeapMarkType());
     }
   }
-  void increase(unsigned long& nid, KeyType& keydlt) {
+  void increase(int& nid, KeyType& keydlt) {
     auto key = (*(handles[nid])).key;//nid = 8879409,6166820,
     const AOHBoostNode<KeyType> new_value = {key + keydlt, nid};
     clock_t start;
@@ -348,7 +348,7 @@ public:
     return HeapDAryType;
   }
    
-  void checkDataItem(unsigned long& nid, double& key) {
+  void checkDataItem(int& nid, int& key) {
     nid = DAryHeap.top().nid;
     key = DAryHeap.top().key;
   }
@@ -360,7 +360,7 @@ class BinomialTester : public AOPTester<KeyType> {
 
   typedef boost::heap::binomial_heap<AOHBoostNode<KeyType>> AOPBinomialHeap;
   AOPBinomialHeap binomialHeap;
-  std::unordered_map<unsigned long, typename AOPBinomialHeap::handle_type> handles;
+  std::unordered_map<int, typename AOPBinomialHeap::handle_type> handles;
 
 public:
   using AOPTester<KeyType>::startStatTime;
@@ -383,7 +383,7 @@ public:
   auto top() {
     return binomialHeap.top();
   }
-  void insert(KeyType& key, unsigned long& nid) {
+  void insert(KeyType& key, int& nid) {
     clock_t start;
     if(PerMethodStatClocks) {
       start = clock();
@@ -395,11 +395,11 @@ public:
     handles[nid] = handle;
   }
   
-  bool elementExist(unsigned long& nid) {
+  bool elementExist(int& nid) {
     return handles.count(nid) != 0;
   }
   
-  void decrease(unsigned long& nid, KeyType& keydlt) {
+  void decrease(int& nid, KeyType& keydlt) {
     AOHBoostNode<KeyType> new_value = {(*(handles[nid])).key - keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
@@ -410,7 +410,7 @@ public:
       SharedHeapManager().update(clock()-start, MethodMarkDecreaseType, getHeapMarkType());
     }
   }
-  void increase(unsigned long& nid, KeyType& keydlt) {
+  void increase(int& nid, KeyType& keydlt) {
     auto key = (*(handles[nid])).key;
     const AOHBoostNode<KeyType> new_value = {key + keydlt, nid};
     clock_t start;
@@ -445,7 +445,7 @@ public:
     return HeapBinomialType;
   }
    
-  void checkDataItem(unsigned long& nid, double& key) {
+  void checkDataItem(int& nid, int& key) {
     nid = binomialHeap.top().nid;
     key = binomialHeap.top().key;
   }
@@ -457,7 +457,7 @@ class SkewTester : public AOPTester<KeyType> {
 
   typedef boost::heap::skew_heap<AOHBoostNode<KeyType>, boost::heap::mutable_<true>> AOPSkewHeap;
   AOPSkewHeap skewHeap;
-  std::unordered_map<unsigned long, typename AOPSkewHeap::handle_type> handles;
+  std::unordered_map<int, typename AOPSkewHeap::handle_type> handles;
 
 public:
   using AOPTester<KeyType>::startStatTime;
@@ -480,7 +480,7 @@ public:
   auto top() {
     return skewHeap.top();
   }
-  void insert(KeyType& key, unsigned long& nid) {
+  void insert(KeyType& key, int& nid) {
     clock_t start;
     if(PerMethodStatClocks) {
       start = clock();
@@ -492,11 +492,11 @@ public:
     handles[nid] = handle;
   }
   
-  bool elementExist(unsigned long& nid) {
+  bool elementExist(int& nid) {
     return handles.count(nid) != 0;
   }
   
-  void decrease(unsigned long& nid, KeyType& keydlt) {
+  void decrease(int& nid, KeyType& keydlt) {
     AOHBoostNode<KeyType> new_value = {(*(handles[nid])).key - keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
@@ -507,7 +507,7 @@ public:
       SharedHeapManager().update(clock()-start, MethodMarkDecreaseType, getHeapMarkType());
     }
   }
-  void increase(unsigned long& nid, KeyType& keydlt) {
+  void increase(int& nid, KeyType& keydlt) {
     auto key = (*(handles[nid])).key;
     const AOHBoostNode<KeyType> new_value = {key + keydlt, nid};
     clock_t start;
@@ -542,7 +542,7 @@ public:
     return HeapSkewType;
   }
 
-  void checkDataItem(unsigned long& nid, double& key) {
+  void checkDataItem(int& nid, int& key) {
     nid = skewHeap.top().nid;
     key = skewHeap.top().key;
   }
@@ -552,7 +552,7 @@ template <typename KeyType>
 class AOHeapTester : public AOPTester<KeyType> {
   
   AOHeap<KeyType> * aoHeap;
-  std::unordered_map<unsigned long, AOHeapNode<KeyType>*> NodePointer;
+  std::unordered_map<int, AOHeapNode<KeyType>*> NodePointer;
 public:
   
   using AOPTester<KeyType>::startStatTime;
@@ -575,7 +575,7 @@ public:
   auto top() {
     return aoHeap->top();
   }
-  void insert(KeyType& key, unsigned long& nid) {
+  void insert(KeyType& key, int& nid) {
     clock_t start;
     if(PerMethodStatClocks) {
       start = clock();
@@ -587,11 +587,11 @@ public:
     NodePointer[nid] = handle;
   }
   
-  bool elementExist(unsigned long& nid) {
+  bool elementExist(int& nid) {
     return NodePointer.count(nid) != 0;
   }
   
-  void decrease(unsigned long& nid, KeyType& keydlt) {
+  void decrease(int& nid, KeyType& keydlt) {
     if(keydlt == 0) return;
     AOHeapNode<KeyType>* node = NodePointer[nid];
     node->key -= keydlt;
@@ -605,7 +605,7 @@ public:
     }
   }
   
-  void increase(unsigned long& nid, KeyType& keydlt) {
+  void increase(int& nid, KeyType& keydlt) {
     AOHeapNode<KeyType>* node = NodePointer[nid];
     node->key += keydlt;
     clock_t start;
@@ -638,7 +638,7 @@ public:
   HeapMarkType getHeapMarkType() {
     return HeapAOHType;
   }
-  void checkDataItem(unsigned long& nid, double& key) {
+  void checkDataItem(int& nid, int& key) {
     nid = aoHeap->top()->nid;
     key = aoHeap->top()->key;
   }
@@ -649,7 +649,7 @@ template <typename KeyType>
 class GenHeapTester : public AOPTester<KeyType> {
   
   AOHeap<KeyType> * aoHeap;
-  std::unordered_map<unsigned long, AOHeapNode<KeyType>*> NodePointer;
+  std::unordered_map<int, AOHeapNode<KeyType>*> NodePointer;
 public:
   
   using AOPTester<KeyType>::startStatTime;
@@ -672,23 +672,23 @@ public:
   auto top() {
     return aoHeap->top();
   }
-  void insert(KeyType& key, unsigned long& nid) {
+  void insert(KeyType& key, int& nid) {
     auto handle = aoHeap->insert(key, nid);
     NodePointer[nid] = handle;
   }
   
-  bool elementExist(unsigned long& nid) {
+  bool elementExist(int& nid) {
     return NodePointer.count(nid) != 0;
   }
   
-  void decrease(unsigned long& nid, KeyType& keydlt) {
+  void decrease(int& nid, KeyType& keydlt) {
     if(keydlt == 0) return;
     AOHeapNode<KeyType>* node = NodePointer[nid];
     node->key -= keydlt;
     aoHeap->decrease(node);
   }
   
-  void increase(unsigned long& nid, KeyType& keydlt) {
+  void increase(int& nid, KeyType& keydlt) {
     AOHeapNode<KeyType>* node = NodePointer[nid];
     node->key += keydlt;
     aoHeap->increase(node);
@@ -707,7 +707,7 @@ public:
   HeapMarkType getHeapMarkType() {
     return HeapAOHType;
   }
-  void checkDataItem(unsigned long& nid, double& key) {
+  void checkDataItem(int& nid, int& key) {
     nid = aoHeap->top()->nid;
     key = aoHeap->top()->key;
   }

@@ -8,8 +8,8 @@
 #ifndef AOHeap_h
 #define AOHeap_h
 
-static const long int AOHReshapeCount = 32;
-static const long int AOHSubGroupSize = 64;
+static const int AOHReshapeCount = 32;
+static const int AOHSubGroupSize = 64;
 static const bool AOHStat = true;
 
 enum AOHNodePosType : unsigned char {
@@ -26,7 +26,7 @@ public:
   AOHNodePosType nodePos;
   KeyType key;
 //  DataType data;
-  unsigned long nid;
+  int nid;
   
   AOHeapNode() {
     init();
@@ -105,8 +105,6 @@ private:
   AOHeapNode<KeyType> * mainTree;
   AOHeapNode<KeyType> * waitingList;
   AOHeapNode<KeyType>* NodeList;
-  long int mergeHeight;
-  long int mergeNum;
 
   void reshape(AOHeapNode<KeyType>* root) {
     AOHeapNode<KeyType> * visitor = root;
@@ -149,14 +147,12 @@ private:
     if(second->key < first->key) {
       std::swap(first, second);
     }
-    long height = 1;
+    int height = 1;
     AOHeapNode<KeyType>* mhd = first;
     while(mhd->getNext() && mhd->getNext()->key < second->key) {
       height++;
       mhd = mhd->getNext();
     }
-    mergeHeight+=height;
-    mergeNum++;
     if(second) appendToLeft(second, mhd, mhd->getNext());
     if(height > AOHReshapeCount) {
       reshape(first->getNext());
@@ -173,14 +169,12 @@ private:
     if(h->key < mainTree->key) {
       std::swap(h, mainTree);
     }
-    long height = 1;
+    int height = 1;
     AOHeapNode<KeyType>* mhd = mainTree;
     while(mhd->getNext() && mhd->getNext()->key < h->key) {
       mhd = mhd->getNext();
       height++;
     }
-    mergeHeight+=height;
-    mergeNum++;
     appendToLeft(h, mhd, mhd->getNext());
     if(height > AOHReshapeCount) {
       reshape(mainTree->getNext());
@@ -237,7 +231,7 @@ private:
   }
   
 AOHeapNode<KeyType>* _consolidate() {
-  long int counter = 1;
+  int counter = 1;
   AOHeapNode<KeyType>* group = NULL;
   AOHeapNode<KeyType>* sum = NULL;
   while (waitingList!=NULL) {
@@ -325,8 +319,6 @@ AOHeapNode<KeyType> * _pickOutFromMainTree(AOHeapNode<KeyType>* x) {
 public:
   
   AOHeap() {
-    mergeNum = 0;
-    mergeHeight = 0;
     mainTree = NULL;
     waitingList = NULL;
   }
@@ -340,7 +332,7 @@ public:
     return mainTree == NULL;
   }
   
-  struct AOHeapNode<KeyType> * insert(KeyType& key, unsigned long& nid) {
+  struct AOHeapNode<KeyType> * insert(KeyType& key, int& nid) {
     struct AOHeapNode<KeyType> * node = new AOHeapNode<KeyType>();
     node->key = key;
     node->nid = nid;
@@ -441,11 +433,6 @@ public:
       _pickOutFromMainTree(mainNode);
       _insert(mainNode);
     }
-  }
-  
-  float T() {
-    if(mergeNum==0) return 0;
-    return (float)mergeHeight/(float)mergeNum;
   }
 };
 
