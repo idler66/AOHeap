@@ -20,7 +20,7 @@
 #include "CommonDef.h"
 
 static const int  AOPDAryArity = 3;
-static const bool PerMethodStatClocks = true;
+static const bool PerMethodStatClocks = false;
 
 template <typename KeyType>
 struct AOHBoostNode{

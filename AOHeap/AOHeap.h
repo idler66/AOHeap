@@ -25,13 +25,7 @@ public:
     pre = NULL;
   }
   void setPre(struct AOHeapNode *n) {
-    if(n==this) {
-      printf("sdfsf");
-    }
     pre = n;
-    if(bro && n && bro ==n) {
-      printf("sdfsf");
-    }
   }
   struct AOHeapNode * getPre() {
     return pre;
@@ -59,9 +53,6 @@ public:
     if(next) {
       next->setPre(this);
     }
-    if(next==this) {
-      printf("sdfsf");
-    }
   }
   struct AOHeapNode* getNext() {
     return next;
@@ -76,9 +67,6 @@ public:
     bro = n;
     if(bro) {
       bro->setPre(this);
-    }
-    if(bro == this) {
-      printf("sdfsf");
     }
   }
   struct AOHeapNode * getBro() {
@@ -118,12 +106,13 @@ public:
   }
 };
 
-static const int ConsolidateListSize = 64;
+static const int ConsolidateListSize = 64+32;
 template <typename KeyType>
 class AOListWeaver {
 private:
   AOHeapNode<KeyType> * waitingList[ConsolidateListSize];
   int ElementPtr;
+  int ReplacePtr;
   
   void batchInsert(AOHeapNode<KeyType> * sentinel,
                        AOHeapNode<KeyType> * start,
@@ -206,22 +195,10 @@ private:
       visitor = visitor->getBro();
     }
   }
-  
-  void checkNoDouble(int index) {
-    for(int ptr=0; ptr<ElementPtr; ptr++) {
-      if(ptr!=index)
-        assert(waitingList[ptr]!=waitingList[index]);
-    }
-    for(int ptr=0; ptr<ElementPtr; ptr++) {
-      assert(waitingList[ptr]->getPre()==NULL);
-    }
     
-  }
-  
   void consolidate(int & minPtr) {
     minPtr = 0;
-    assert(ElementPtr == ConsolidateListSize);
-    //ordering the array
+    ReplacePtr = 0;
     insertionSort();
     MinHeap<KeyType> groups;
     int waitingIndex = 0;
@@ -237,7 +214,9 @@ private:
       while(sentinel->key < start->key) {
         preSentinel = sentinel;
         sentinel = sentinel->getNext();
-        if(!sentinel) return noSentinel(preSentinel, start, waitingIndex, groups);
+        if(!sentinel) {
+          return noSentinel(preSentinel, start, waitingIndex, groups);
+        }
       }
       //find longest bro chain and insert.
       AOHeapNode<KeyType> *end = start;
@@ -263,6 +242,7 @@ private:
 public:
   AOListWeaver() {
     ElementPtr = 0;
+    ReplacePtr = 0;
   }
   bool empty() {
     return ElementPtr==0;
@@ -275,7 +255,6 @@ public:
     } else if(waitingList[minPtr]->key > node->key) {
       minPtr = ElementPtr;
     }
-    checkNoDouble(ElementPtr);
     ElementPtr += 1;
     if(ElementPtr == ConsolidateListSize) {
       consolidate(minPtr);
@@ -295,6 +274,11 @@ public:
       }
       next += 1;
     }
+    if(ReplacePtr < minPtr) {
+      std::swap(waitingList[minPtr], waitingList[ReplacePtr]);
+      minPtr = ReplacePtr;
+      ReplacePtr+=1;
+    }
   }
   
   AOHeapNode<KeyType> * getMin(const int& minPtr) {
@@ -305,14 +289,16 @@ public:
   AOHeapNode<KeyType> * updateMin(int& minPtr) {
     AOHeapNode<KeyType> * oldMin = waitingList[minPtr];
     AOHeapNode<KeyType> * bro = oldMin->getBro();
-    if(bro) oldMin->removeBro();
+    if(bro) {
+      oldMin->removeBro();
+    }
     AOHeapNode<KeyType> * next = oldMin->getNext();
-    if(next) oldMin->removeNext();
+    if(next) {
+      oldMin->removeNext();
+    }
     if(next && bro) {
       if(bro->key > next->key) std::swap(bro, next);
       waitingList[minPtr] = bro;
-      checkNoDouble(minPtr);
-
       waitingList[ElementPtr++] = next;
       if(ElementPtr == ConsolidateListSize) {
         consolidate(minPtr);
@@ -320,14 +306,11 @@ public:
       }
     }else if (next) {
       waitingList[minPtr] = next;
-      checkNoDouble(minPtr);
     } else if(bro) {
       waitingList[minPtr] = bro;
-      checkNoDouble(minPtr);
     } else {
       ElementPtr-=1;
       waitingList[minPtr] = waitingList[ElementPtr];
-      checkNoDouble(minPtr);
     }
     findMin(minPtr);
     return oldMin;
@@ -384,35 +367,13 @@ public:
     struct AOHeapNode<KeyType> * node = new AOHeapNode<KeyType>();
     node->key = key;
     node->nid = nid;
-
-    int checkMinPtr;
-
-    trees.findMin(checkMinPtr);
-    assert(checkMinPtr==MinPtr ||
-           trees.getMin(checkMinPtr)->key==trees.getMin(MinPtr)->key);
-    
     trees.push(node, MinPtr);
-    
-    trees.findMin(checkMinPtr);
-    
-    assert(checkMinPtr==MinPtr ||
-           trees.getMin(checkMinPtr)->key==trees.getMin(MinPtr)->key);
     return node;
   }
   
   void pop() {
-    int checkMinPtr;
-    trees.findMin(checkMinPtr);
-    if(checkMinPtr==28)
-    assert(checkMinPtr==MinPtr);
-    
     auto minTree = trees.updateMin(MinPtr);
     free(minTree);
-    
-    int checkMinPtr2;
-
-    trees.findMin(checkMinPtr2);
-    assert(checkMinPtr2==MinPtr);
   }
   
   void decrease(AOHeapNode<KeyType>* node) {
@@ -432,48 +393,19 @@ public:
   }
   
   void increase(AOHeapNode<KeyType>* node) {
-    //remove smaller key if needed
-    if(trees.getMin(MinPtr) == node) trees.findMin(MinPtr);
-    
-    AOHeapNode<KeyType>* group1 = NULL;
-    if(node->getBro() && node->getNext()) {
-      if(node->getBro()->key > node->getNext()->key) {//next is small!
-        if(node->getNext()->key < node->key) {
-          group1 = node->getNext();
-          node->removeNext();
-        }
-      } else {//bro is small!
-        if(node->getBro()->key < node->key) {
-          group1 = node->getBro();
-          node->removeBro();
-        }
-      }
+    if(trees.getMin(MinPtr) == node) {
+      trees.findMin(MinPtr);
     }
-    if(group1) {
-      trees.push(group1, MinPtr);
+    AOHeapNode<KeyType> * next = node->getNext();
+    AOHeapNode<KeyType> * bro = node->getBro();
+    if(bro && node->key > bro->key) {
+      node->removeBro();
+      trees.push(bro, MinPtr);
     }
-    
-    //remove bigger key if needed
-    AOHeapNode<KeyType>* group2 = NULL;
-    AOHeapNode<KeyType>* single = NULL;
-    if(!node->getBro() && node->getNext()) {
-      node->swapBroAndNext();
+    if(next && node->key > next->key) {
+      node->removeNext();
+      trees.push(next, MinPtr);
     }
-    if(node->getBro() && node->key > node->getBro()->key) {
-      if(node->getPre()) {//非根
-        single = pickoutSubTree(node);
-        trees.push(single, MinPtr);
-      } else {//根
-        group2 = node->getBro();
-        node->removeBro();
-        trees.push(group2, MinPtr);
-      }
-    }
-    
-    int checkMinPtr;
-    trees.findMin(checkMinPtr);
-    assert(checkMinPtr==MinPtr ||
-           trees.getMin(checkMinPtr)->key==trees.getMin(MinPtr)->key);
   }
   
 };
