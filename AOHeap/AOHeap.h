@@ -8,10 +8,6 @@
 #include <cmath>
 #include <algorithm>
 
-static const int AOHReshapeCount = 32;
-static const int AOHSubGroupSize = 64;
-static const bool AOHStat = true;
-
 template <typename KeyType>
 struct AOHeapNode {
 private:
@@ -41,9 +37,6 @@ public:
     }
   }
   
-  void swapBroAndNext() {
-    std::swap(bro, next);
-  }
   void moveBro2Next() {
     next = bro;
     bro = NULL;
@@ -188,14 +181,6 @@ private:
     }
   }
   
-  void reshape(AOHeapNode<KeyType>* root) {
-    AOHeapNode<KeyType> * visitor = root;
-    while(visitor) {
-      visitor->swapBroAndNext();
-      visitor = visitor->getBro();
-    }
-  }
-    
   void consolidate(int & minPtr) {
     minPtr = 0;
     ReplacePtr = 0;
