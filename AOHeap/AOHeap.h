@@ -259,10 +259,17 @@ public:
       }
       next += 1;
     }
-    if(ReplacePtr < minPtr) {
-      std::swap(waitingList[minPtr], waitingList[ReplacePtr]);
-      minPtr = ReplacePtr;
-      ReplacePtr+=1;
+//    if(ReplacePtr < minPtr) {
+//      std::swap(waitingList[minPtr], waitingList[ReplacePtr]);
+//      minPtr = ReplacePtr;
+//      ReplacePtr+=1;
+//    }
+  }
+  
+  void udpateMinPtr(AOHeapNode<KeyType>* minNode, int& minPtr) {
+    minPtr = 0;
+    while(waitingList[minPtr] != minNode) {
+      minPtr += 1;
     }
   }
   
@@ -372,7 +379,8 @@ public:
       }
     } else  {//原树
       if(trees.getMin(MinPtr)->key > node->key) {
-        trees.findMin(MinPtr);
+//        trees.findMin(MinPtr);
+        trees.udpateMinPtr(node, MinPtr);
       }
     }
   }

@@ -20,7 +20,7 @@
 #include "CommonDef.h"
 
 static const int  AOPDAryArity = 3;
-static const bool PerMethodStatClocks = false;
+#define PerMethodStatClocks false
 
 template <typename KeyType>
 struct AOHBoostNode{
@@ -133,7 +133,7 @@ public:
   }
   
   bool popOne() {
-    if(!empty()) {
+//    if(!empty()) {
       auto value = fibonacciHeap.top();
 //      handles[value.nid] = typename AOPFibonacciHeap::handle_type();
       int key = value.key;
@@ -147,8 +147,8 @@ public:
         SharedHeapManager().update(clock()-start, MethodMarkPopType, getHeapMarkType());
       }
       return true;
-    }
-    return false;
+//    }
+//    return false;
   }
     
   HeapMarkType getHeapMarkType() {
