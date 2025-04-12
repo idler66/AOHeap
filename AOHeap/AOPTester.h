@@ -150,7 +150,7 @@ public:
 //    }
 //    return false;
   }
-    
+  
   HeapMarkType getHeapMarkType() {
     return HeapFibonacciType;
   }

@@ -53,7 +53,8 @@ void closeAOPFile(std::ofstream& file) {
 
 std::ofstream openAOPFile(unsigned char ops, std::string name) {
   std::ofstream file;
-  std::string base = "/Users/unknown100name/Desktop/Test4/gen/";
+  std::string root = getProjectRoot();
+  std::string base = root.append("/gen/");
   std::string ostr = ".csv";
   std::string path = base + name + ostr;
   if(!std::filesystem::exists(path)) {

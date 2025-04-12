@@ -99,7 +99,7 @@ public:
   }
 };
 
-static const int ConsolidateListSize = 64+32;
+static const int ConsolidateListSize = 128;
 template <typename KeyType>
 class AOListWeaver {
 private:
@@ -192,7 +192,7 @@ private:
     AOHeapNode<KeyType> * start = getNextMinNormalizeTree(waitingIndex, groups);
     while(start) {
       if(!sentinel) {
-        //get whole bro chain, no sentinel.
+        //get whole bro chain, no sentinel.d
         return noSentinel(preSentinel, start, waitingIndex, groups);
       }
       //find valid sentinel.
