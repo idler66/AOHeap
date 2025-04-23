@@ -181,6 +181,24 @@ private:
     }
   }
   
+  void linearConsolidate(int & minPtr) {
+    minPtr = 0;
+    ReplacePtr = 0;
+    insertionSort();
+    MinHeap<KeyType> groups;
+    int waitingIndex = 0;
+    AOHeapNode<KeyType> * preSentinel = getNextMinNormalizeTree(waitingIndex, groups);
+    AOHeapNode<KeyType> * start = getNextMinNormalizeTree(waitingIndex, groups);
+    if(start) {
+      preSentinel->setBro(start);
+      while(AOHeapNode<KeyType> * next = getNextMinNormalizeTree(waitingIndex, groups)) {
+        start->setBro(next);
+        start = next;
+      }
+    }
+    ElementPtr = 1;
+  }
+  
   void consolidate(int & minPtr) {
     minPtr = 0;
     ReplacePtr = 0;
