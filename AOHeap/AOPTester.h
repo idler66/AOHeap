@@ -15,6 +15,7 @@
 #include <boost/heap/skew_heap.hpp>
 
 #include "AOHeap.h"
+#include "AOHeapOpt.h"
 #include "NaiveSeqsGenerator.h"
 
 #include "CommonDef.h"
@@ -150,7 +151,7 @@ public:
 //    }
 //    return false;
   }
-    
+  
   HeapMarkType getHeapMarkType() {
     return HeapFibonacciType;
   }
@@ -551,7 +552,7 @@ public:
 template <typename KeyType>
 class AOHeapTester : public AOPTester<KeyType> {
   
-  AOHeap<KeyType> * aoHeap;
+  AOHeapOpt<KeyType> * aoHeap;
   std::unordered_map<int, AOHeapNode<KeyType>*> NodePointer;
 public:
   
@@ -567,7 +568,7 @@ public:
     }
   }
   AOHeapTester() {
-    aoHeap = new AOHeap<KeyType>();
+    aoHeap = new AOHeapOpt<KeyType>();
   }
   bool empty() {
     return aoHeap->empty();
@@ -594,6 +595,14 @@ public:
   void decrease(int& nid, KeyType& keydlt) {
     if(keydlt == 0) return;
     AOHeapNode<KeyType>* node = NodePointer[nid];
+    
+    if(node->inBinaryHeap) {
+      AOHeapNode<KeyType>* rnode = aoHeap->toModify(node);
+      if(rnode) {
+        NodePointer[rnode->nid] = rnode;
+      }
+    }
+    
     node->key -= keydlt;
     clock_t start;
     if(PerMethodStatClocks) {
@@ -607,6 +616,14 @@ public:
   
   void increase(int& nid, KeyType& keydlt) {
     AOHeapNode<KeyType>* node = NodePointer[nid];
+    
+    if(node->inBinaryHeap) {
+      AOHeapNode<KeyType>* rnode = aoHeap->toModify(node);
+      if(rnode) {
+        NodePointer[rnode->nid] = rnode;
+      }
+    }
+    
     node->key += keydlt;
     clock_t start;
     if(PerMethodStatClocks) {
@@ -630,6 +647,12 @@ public:
       if(PerMethodStatClocks) {
         SharedHeapManager().update(clock()-start, MethodMarkPopType, getHeapMarkType());
       }
+      
+      AOHeapNode<KeyType>* rnode = aoHeap->toModify(NULL);
+      if(rnode) {
+        NodePointer[rnode->nid] = rnode;
+      }
+      
       return true;
     }
     return false;
@@ -639,8 +662,11 @@ public:
     return HeapAOHType;
   }
   void checkDataItem(int& nid, int& key) {
-    nid = aoHeap->top()->nid;
-    key = aoHeap->top()->key;
+//    nid = aoHeap->top()->nid;
+//    key = aoHeap->top()->key;
+    
+    aoHeap->printInfo();
+     
   }
 };
 
