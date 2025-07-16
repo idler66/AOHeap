@@ -2,125 +2,21 @@
 //  Adjacent ordered heap
 //  Created by 嘟嘟 on 2024/12/25.
 
-#ifndef AOHeap_h
-#define AOHeap_h
+#ifndef AOHeapOpt_h
+#define AOHeapOpt_h
 
 #include <cmath>
 #include <algorithm>
 
+#include "AOHeap.h"
 
 template <typename KeyType>
-struct AOHeapNode {
-private:
-public:
-  struct AOHeapNode *bro, *pre, *next;
-  KeyType key;
-  int nid;
-  bool inBinaryHeap;
-  AOHeapNode() {
-    next = NULL;
-    bro = NULL;
-    pre = NULL;
-    inBinaryHeap = false;
-  }
-  void setPre(struct AOHeapNode *n) {
-    pre = n;
-  }
-  struct AOHeapNode * getPre() {
-    return pre;
-  }
-  void removePre() {
-    if(pre) {
-      if(pre->bro == this) {
-        pre->removeBro();
-      } else if(pre->next == this) {
-        pre->removeNext();
-      }
-      pre = NULL;
-    }
-  }
-  
-  void moveBro2Next() {
-    next = bro;
-    bro = NULL;
-  }
-  void setNext(struct AOHeapNode *n) {
-    next = n;
-    if(next) {
-      next->setPre(this);
-    }
-  }
-  struct AOHeapNode* getNext() {
-    return next;
-  }
-  void removeNext() {
-    if(next) {
-      next->setPre(NULL);
-      next = NULL;
-    }
-  }
-  void setBro(struct AOHeapNode *n) {
-    bro = n;
-    if(bro) {
-      bro->setPre(this);
-    }
-  }
-  struct AOHeapNode * getBro() {
-    return bro;
-  }
-  void removeBro() {
-    if(bro) {
-      bro->pre = NULL;
-      bro = NULL;
-    }
-  }
-};
-
-template <typename KeyType>
-class MinHeap {
-private:
-  std::vector<AOHeapNode<KeyType> *> heap;
-  static bool compare(const AOHeapNode<KeyType> * a,
-                      const AOHeapNode<KeyType> * b) {
-    return a->key > b->key;
-  }
-public:
-  MinHeap() {}
-  void push(AOHeapNode<KeyType> * node) {
-    node->inBinaryHeap = true;
-    heap.push_back(node);
-    std::push_heap(heap.begin(), heap.end(), compare);
-  }
-  void pop() {
-    auto node = heap.front();
-    node->inBinaryHeap = false;
-    std::pop_heap(heap.begin(), heap.end(), compare);
-    heap.pop_back();
-  }
-  AOHeapNode<KeyType> * top() {
-    return heap.front();
-  }
-  bool empty() {
-    return heap.empty();
-  }
-  int size() {
-    return heap.size();
-  }
-};
-
-//static const int ConsolidateListSize = 16;
-//static const int ConsolidateListSize = 32;
-//static const int ConsolidateListSize = 64;
-//static const int ConsolidateListSize = 256;
-static const int ConsolidateListSize = 64+32;
-static int counter = 0;
-static int operation = 0;
-template <typename KeyType>
-class AOListWeaver {
+class AOListWeaverOpt {
 private:
   AOHeapNode<KeyType> * waitingList[ConsolidateListSize];
   int ElementPtr;
   int ReplacePtr;
+  MinHeap<KeyType> groups;
 
   std::vector<int> counterList;
   int bigcounter;
@@ -135,7 +31,6 @@ private:
   
   void normalizeTree(AOHeapNode<KeyType> * tree,
                     MinHeap<KeyType>& groups) {//ordered and no-changing
-    //convert tree to standard sub-tree and push remainders into heap
     if(tree->getBro()) {
       if(AOHeapNode<KeyType> * next = tree->getNext()) {
         tree->removeNext();
@@ -146,8 +41,10 @@ private:
   }
   
   AOHeapNode<KeyType> * getNextMinNormalizeTree(int& waitingIndex,
-                                  MinHeap<KeyType>& groups) {//ordered and no-changing
-//    counter++;///////////////
+                                                int MaxBinaryHeapSize) {//ordered and no-changing
+//    if( groups.size() < MaxBinaryHeapSize) return NULL;//stop when array empty
+    if(waitingIndex >= ElementPtr && groups.size() < MaxBinaryHeapSize) return NULL;//stop when array empty
+
     AOHeapNode<KeyType> * one = NULL;//array's min
     if(waitingIndex < ElementPtr) one = waitingList[waitingIndex];
     AOHeapNode<KeyType> * two = NULL;//heap's min
@@ -174,20 +71,6 @@ private:
     return NULL;
   }
   
-  void noSentinel(AOHeapNode<KeyType> * preSentinel,
-                  AOHeapNode<KeyType> * start,
-                  int & waitingIndex,
-                  MinHeap<KeyType>& groups) {//ordered and no-changing
-    if(start) {
-      preSentinel->setNext(start);
-      while(AOHeapNode<KeyType> * next = getNextMinNormalizeTree(waitingIndex, groups)) {
-        start->setBro(next);
-        start = next;
-      }
-    }
-    ElementPtr = 1;
-  }
-  
   void insertionSort() {
     for (int i = 1; i < ElementPtr; i++) {
       AOHeapNode<KeyType> * node = waitingList[i];
@@ -201,76 +84,67 @@ private:
   }
   
   void linearConsolidate(int & minPtr) {
-    minPtr = 0;
-    ReplacePtr = 0;
-    insertionSort();
-    MinHeap<KeyType> groups;
-    
     int waitingIndex = 0;
-    AOHeapNode<KeyType> * bro = getNextMinNormalizeTree(waitingIndex, groups);
-    assert(bro->getBro()==NULL);
+    ReplacePtr = 0;
+    minPtr = 0;
+//    insertionSort();    
+    findMin(minPtr);
+    for(int index=0; index <ElementPtr; index++) {
+      if(index == minPtr) {
+        waitingList[0] = waitingList[index];
+        continue;
+      }
+      auto node = waitingList[index];
+      groups.push(node);
+    }
+    minPtr = 0;
+    waitingIndex = ElementPtr;
+    
+    int heapSize = groups.size();
+    int MaxBinaryHeap = 16*log2(heapSize)+128;
+    AOHeapNode<KeyType> * bro = getNextMinNormalizeTree(waitingIndex, MaxBinaryHeap);
     while(bro) {
-//      counter++;
-      AOHeapNode<KeyType> * tree = getNextMinNormalizeTree(waitingIndex, groups);
+      AOHeapNode<KeyType> * tree = getNextMinNormalizeTree(waitingIndex, MaxBinaryHeap);
       bro->setBro(tree);
       bro = tree;
     }
+    
     ElementPtr = 1;
+    if(bro) push(bro, minPtr);    
   }
   
   void consolidate(int & minPtr) {
     return linearConsolidate(minPtr);
-    
-    minPtr = 0;
-    ReplacePtr = 0;
-    insertionSort();
-    MinHeap<KeyType> groups;
-    int waitingIndex = 0;
-    AOHeapNode<KeyType> * preSentinel = getNextMinNormalizeTree(waitingIndex, groups);
-    AOHeapNode<KeyType> * sentinel = preSentinel->getNext();
-    AOHeapNode<KeyType> * start = getNextMinNormalizeTree(waitingIndex, groups);
-    while(start) {
-      if(!sentinel) {
-        //get whole bro chain, no sentinel.d
-        return noSentinel(preSentinel, start, waitingIndex, groups);
-      }
-      //find valid sentinel.
-      while(sentinel->key < start->key) {
-        preSentinel = sentinel;
-        sentinel = sentinel->getNext();
-        if(!sentinel) {
-          return noSentinel(preSentinel, start, waitingIndex, groups);
-        }
-      }
-      //find longest bro chain and insert.
-      AOHeapNode<KeyType> *end = start;
-      AOHeapNode<KeyType> *next = getNextMinNormalizeTree(waitingIndex, groups);
-      while(next) {
-        if(sentinel->key >= next->key) {
-          end->setBro(next);
-          end = next;
-          next = getNextMinNormalizeTree(waitingIndex, groups);
-          continue;
-        }
-        break;
-      }
-      batchInsert(sentinel, start, end);
-      //prepare for next loop.
-      start = next;
-      preSentinel = sentinel;
-      sentinel = sentinel->getNext();
+  }
+  
+  AOHeapNode<KeyType> * getNextMinToNode() {
+    if(!groups.empty()) {
+      return groups.top();
     }
-    ElementPtr = 1;
+    return NULL;
+  }
+  AOHeapNode<KeyType>* increConsolidate(AOHeapNode<KeyType>* sentinelNode) {
+    AOHeapNode<KeyType> * root = getNextMinToNode();
+    AOHeapNode<KeyType> * bro = root;
+    while(bro) {
+      groups.pop();
+      if(bro == sentinelNode) break;
+      normalizeTree(bro, groups);
+      AOHeapNode<KeyType> * tree = getNextMinToNode();
+      bro->setBro(tree);
+      bro = tree;
+    }
+    return root;
   }
   
 public:
-  AOListWeaver() {
+  AOListWeaverOpt() {
     ElementPtr = 0;
     ReplacePtr = 0;
     
     bigcounter = 0;
   }
-  ~AOListWeaver() {
+  ~AOListWeaverOpt() {
   }
   
   void printInfo() {
@@ -315,18 +189,21 @@ public:
       }
       next += 1;
     }
-//    if(ReplacePtr < minPtr) {
-//      std::swap(waitingList[minPtr], waitingList[ReplacePtr]);
-//      minPtr = ReplacePtr;
-//      ReplacePtr+=1;
-//    }
   }
   
   void udpateMinPtr(AOHeapNode<KeyType>* minNode, int& minPtr) {
     minPtr = 0;
     while(waitingList[minPtr] != minNode) {
       minPtr += 1;
+      const std::string dd = "sdf";
+      if(minPtr > ElementPtr) throw std::runtime_error(dd);
     }
+  }
+  
+  void checkMin(int minPtr) {
+    int nmin;
+    findMin(nmin);
+    assert(minPtr == nmin);
   }
   
   AOHeapNode<KeyType> * getMin(const int& minPtr) {
@@ -335,9 +212,10 @@ public:
   }
   
   AOHeapNode<KeyType> * updateMin(int& minPtr) {
+//    findMin(minPtr);
     AOHeapNode<KeyType> * oldMin = waitingList[minPtr];
     AOHeapNode<KeyType> * bro = oldMin->getBro();
-    if(bro) {
+    if(bro != NULL) {
       oldMin->removeBro();
     }
     AOHeapNode<KeyType> * next = oldMin->getNext();
@@ -364,15 +242,43 @@ public:
     return oldMin;
   }
   
+  AOHeapNode<KeyType>* toModify(AOHeapNode<KeyType>* node) {
+    if(node->inBinaryHeap) {
+      AOHeapNode<KeyType>* root = increConsolidate(node);
+      return root;
+    }
+    return NULL;
+  }
+  
+  AOHeapNode<KeyType>* didModified(AOHeapNode<KeyType>* oldMin) {
+    if(oldMin==NULL) {
+      if(!groups.empty()) {
+        AOHeapNode<KeyType> * minInBH = groups.top();
+        groups.pop();
+//        normalizeTree(minInBH, groups);
+        return minInBH;
+      }
+      return NULL;
+    }
+    if(!groups.empty()) {
+      AOHeapNode<KeyType> * minInBH = groups.top();
+      if(minInBH->key < oldMin->key) {
+        groups.pop();
+//        normalizeTree(minInBH, groups);
+        return minInBH;
+      }
+    }
+    return NULL;
+  }
+  
 };
 
 template <typename KeyType>
-class AOHeap {
+class AOHeapOpt {
 private:
-  AOListWeaver<KeyType> trees;
+  AOListWeaverOpt<KeyType> trees;
   int MinPtr;
   int ElementNum;
-  int BIgElementNum;
   
   void batchInsert(AOHeapNode<KeyType> * sentinel,
                        AOHeapNode<KeyType> * start,
@@ -399,14 +305,11 @@ AOHeapNode<KeyType> * pickoutSubTree(AOHeapNode<KeyType>* x) {//返回标准子�
   
 public:
   
-  AOHeap() {
+  AOHeapOpt() {
     MinPtr = -1;
-    
-    
     ElementNum = 0;
-    BIgElementNum = 0;
   }
-  ~AOHeap() {
+  ~AOHeapOpt() {
   }
   
   AOHeapNode<KeyType>* top() {
@@ -419,28 +322,35 @@ public:
   
   struct AOHeapNode<KeyType> * insert(KeyType& key, int& nid) {
 //    operation++;
-
     struct AOHeapNode<KeyType> * node = new AOHeapNode<KeyType>();
     node->key = key;
     node->nid = nid;
     trees.push(node, MinPtr);
-    
-//    ElementNum++;
-    if(ElementNum>BIgElementNum) BIgElementNum = ElementNum;
     return node;
   }
   
   void pop() {
 //    operation++;
-
-//    ElementNum--;
     auto minTree = trees.updateMin(MinPtr);
     free(minTree);
   }
   
+  void toModify(AOHeapNode<KeyType>* node) {
+    auto rslt = trees.toModify(node);
+    if(rslt) {
+      trees.push(rslt, MinPtr);
+    }
+  }
+  
+  void didModified() {
+    auto node = trees.didModified(top());
+    if(node) {
+      trees.push(node, MinPtr);
+    }
+  }
+  
   void decrease(AOHeapNode<KeyType>* node) {
 //    operation++;
-
     if (node == trees.getMin(MinPtr)) {
       return;
     }
@@ -451,8 +361,8 @@ public:
       }
     } else  {//原树
       if(trees.getMin(MinPtr)->key > node->key) {
-//        trees.findMin(MinPtr);
-        trees.udpateMinPtr(node, MinPtr);
+//        trees.udpateMinPtr(node, MinPtr);
+        trees.findMin(MinPtr);
       }
     }
   }
@@ -482,9 +392,7 @@ public:
 //    operation = 0;
     
   }
-  void toModify() {
-    
-  }
+  
 };
 
 #endif /* AOHeap_h */

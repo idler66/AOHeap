@@ -15,7 +15,7 @@
 #include <boost/heap/skew_heap.hpp>
 
 #include "AOHeap.h"
-#include "NaiveSeqsGenerator.h"
+#include "AOHeapOpt.h"
 
 #include "CommonDef.h"
 
@@ -150,7 +150,7 @@ public:
 //    }
 //    return false;
   }
-    
+  
   HeapMarkType getHeapMarkType() {
     return HeapFibonacciType;
   }
@@ -550,8 +550,9 @@ public:
 
 template <typename KeyType>
 class AOHeapTester : public AOPTester<KeyType> {
-  
-  AOHeap<KeyType> * aoHeap;
+  int minValue;
+  AOHeapOpt<KeyType> * aoHeap;
+//  AOHeap<KeyType> * aoHeap;
   std::unordered_map<int, AOHeapNode<KeyType>*> NodePointer;
 public:
   
@@ -567,7 +568,9 @@ public:
     }
   }
   AOHeapTester() {
-    aoHeap = new AOHeap<KeyType>();
+//    aoHeap = new AOHeap<KeyType>();
+    aoHeap = new AOHeapOpt<KeyType>();
+    minValue = -1000000;
   }
   bool empty() {
     return aoHeap->empty();
@@ -576,14 +579,7 @@ public:
     return aoHeap->top();
   }
   void insert(KeyType& key, int& nid) {
-    clock_t start;
-    if(PerMethodStatClocks) {
-      start = clock();
-    }
     auto handle = aoHeap->insert(key, nid);
-    if(PerMethodStatClocks) {
-      SharedHeapManager().update(clock()-start, MethodMarkInsertType, getHeapMarkType());
-    }
     NodePointer[nid] = handle;
   }
   
@@ -594,42 +590,34 @@ public:
   void decrease(int& nid, KeyType& keydlt) {
     if(keydlt == 0) return;
     AOHeapNode<KeyType>* node = NodePointer[nid];
+    //      best
+    if(node->inBinaryHeap) {
+      aoHeap->toModify(node);
+    }
     node->key -= keydlt;
-    clock_t start;
-    if(PerMethodStatClocks) {
-      start = clock();
-    }
     aoHeap->decrease(node);
-    if(PerMethodStatClocks) {
-      SharedHeapManager().update(clock()-start, MethodMarkDecreaseType, getHeapMarkType());
-    }
   }
   
   void increase(int& nid, KeyType& keydlt) {
     AOHeapNode<KeyType>* node = NodePointer[nid];
+//      best
+    if(node->inBinaryHeap) {
+      aoHeap->toModify(node);
+    }
     node->key += keydlt;
-    clock_t start;
-    if(PerMethodStatClocks) {
-      start = clock();
-    }
     aoHeap->increase(node);
-    if(PerMethodStatClocks) {
-      SharedHeapManager().update(clock()-start, MethodMarkIncreaseType, getHeapMarkType());
-    }
   }
   
   bool popOne() {
     if(!empty()) {
       auto node = aoHeap->top();
+//      assert(minValue <= node->key);
+//      minValue = node->key;
+//      printf("\n %d ", node->key);
       NodePointer.erase(node->nid);
-      clock_t start;
-      if(PerMethodStatClocks) {
-        start = clock();
-      }
       aoHeap->pop();
-      if(PerMethodStatClocks) {
-        SharedHeapManager().update(clock()-start, MethodMarkPopType, getHeapMarkType());
-      }
+//      best
+      aoHeap->didModified();
       return true;
     }
     return false;
@@ -639,8 +627,9 @@ public:
     return HeapAOHType;
   }
   void checkDataItem(int& nid, int& key) {
-    nid = aoHeap->top()->nid;
-    key = aoHeap->top()->key;
+//    nid = aoHeap->top()->nid;
+//    key = aoHeap->top()->key;
+    aoHeap->printInfo();
   }
 };
 
