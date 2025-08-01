@@ -29,7 +29,7 @@ public:
   bool elementExist(int& nid) {
     return handles.count(nid) != 0;
   }
-  void push(int& nid, KeyType data) {
+  void push(int& nid, KeyType& data) {
     handles[nid] = data;
   }
   void clear(int& nid) {
@@ -93,7 +93,8 @@ class FibonacciTester : public AOPTester<KeyType> {
 
   typedef boost::heap::fibonacci_heap<AOHBoostNode<KeyType>> AOPFibonacciHeap;
   AOPFibonacciHeap fibonacciHeap;
-  std::unordered_map<int, typename AOPFibonacciHeap::handle_type> handles;
+//  std::unordered_map<int, typename AOPFibonacciHeap::handle_type> handles;
+  NodeID2Address<typename AOPFibonacciHeap::handle_type> handles;
 public:
   using AOPTester<KeyType>::startStatTime;
   using AOPTester<KeyType>::finishStatTime;
@@ -120,31 +121,39 @@ public:
     if(PerMethodStatClocks) {
       SharedHeapManager().update(clock()-start, MethodMarkInsertType, getHeapMarkType());
     }
-    handles[nid] = handle;
+    handles.push(nid, handle);
+//    handles[nid] = handle;
   }
   
   bool elementExist(int& nid) {
-    return handles.count(nid) != 0;
+    return handles.elementExist(nid);
+//    return handles.count(nid) != 0;
   }
   
   void decrease(int& nid, KeyType& keydlt) {
-    AOHBoostNode<KeyType> new_value = {handles[nid].node_->value.key - keydlt, nid};
+    typename AOPFibonacciHeap::handle_type& handle = handles.get(nid);
+//    AOHBoostNode<KeyType> new_value = {handles[nid].node_->value.key - keydlt, nid};
+    AOHBoostNode<KeyType> new_value = {handle.node_->value.key - keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
       start = clock();
     }
-    fibonacciHeap.decrease(handles[nid], new_value);
+//    fibonacciHeap.decrease(handles[nid], new_value);
+    fibonacciHeap.decrease(handle, new_value);
     if(PerMethodStatClocks) {
       SharedHeapManager().update(clock()-start, MethodMarkDecreaseType, getHeapMarkType());
     }
   }
   void increase(int& nid, KeyType& keydlt) {
-    AOHBoostNode<KeyType> new_value = {handles[nid].node_->value.key + keydlt, nid};
+    typename AOPFibonacciHeap::handle_type& handle = handles.get(nid);
+//    AOHBoostNode<KeyType> new_value = {handles[nid].node_->value.key + keydlt, nid};
+        AOHBoostNode<KeyType> new_value = {handle.node_->value.key + keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
       start = clock();
     }
-    fibonacciHeap.increase(handles[nid], new_value);
+//    fibonacciHeap.increase(handles[nid], new_value);
+    fibonacciHeap.increase(handle, new_value);
     if(PerMethodStatClocks) {
       SharedHeapManager().update(clock()-start, MethodMarkIncreaseType, getHeapMarkType());
     }
@@ -155,7 +164,8 @@ public:
       auto value = fibonacciHeap.top();
 //      handles[value.nid] = typename AOPFibonacciHeap::handle_type();
       int key = value.key;
-      handles.erase(value.nid);
+//    handles.erase(value.nid);
+    handles.clear(value.nid);
       clock_t start;
       if(PerMethodStatClocks) {
         start = clock();
@@ -184,8 +194,8 @@ class PairingTester : public AOPTester<KeyType> {
 
   typedef boost::heap::pairing_heap<AOHBoostNode<KeyType>> AOPPairingHeap;
   AOPPairingHeap pairingHeap;
-  std::unordered_map<int, typename AOPPairingHeap::handle_type> handles;
-
+//  std::unordered_map<int, typename AOPPairingHeap::handle_type> handles;
+  NodeID2Address<typename AOPPairingHeap::handle_type> handles;
 public:
   using AOPTester<KeyType>::startStatTime;
   using AOPTester<KeyType>::finishStatTime;
@@ -197,7 +207,7 @@ public:
     while(popOne()) {
       assert(0);
     }
-    handles.clear();
+//    handles.clear();
   }
   PairingTester() {
   }
@@ -216,29 +226,33 @@ public:
     if(PerMethodStatClocks) {
       SharedHeapManager().update(clock()-start, MethodMarkInsertType, getHeapMarkType());
     }
-    handles[nid] = handle;
+//    handles[nid] = handle;
+    handles.push(nid, handle);
   }
   bool elementExist(int& nid) {
-    return handles.count(nid) != 0;
+//    return handles.count(nid) != 0;
+    return handles.elementExist(nid);
   }
   void decrease(int& nid, KeyType& keydlt) {
-    AOHBoostNode<KeyType> new_value = {handles[nid].node_->value.key - keydlt, nid};
+    typename AOPPairingHeap::handle_type& handle = handles.get(nid);
+    AOHBoostNode<KeyType> new_value = {handle.node_->value.key - keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
       start = clock();
     }
-    pairingHeap.decrease(handles[nid], new_value);
+    pairingHeap.decrease(handle, new_value);
     if(PerMethodStatClocks) {
       SharedHeapManager().update(clock()-start, MethodMarkDecreaseType, getHeapMarkType());
     }
   }
   void increase(int& nid, KeyType& keydlt) {
-    AOHBoostNode<KeyType> new_value = {handles[nid].node_->value.key + keydlt, nid};
+    typename AOPPairingHeap::handle_type& handle = handles.get(nid);
+    AOHBoostNode<KeyType> new_value = {handle.node_->value.key + keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
       start = clock();
     }
-    pairingHeap.increase(handles[nid], new_value);
+    pairingHeap.increase(handle, new_value);
     if(PerMethodStatClocks) {
       SharedHeapManager().update(clock()-start, MethodMarkIncreaseType, getHeapMarkType());
     }
@@ -247,7 +261,8 @@ public:
   bool popOne() {
     if(!empty()) {
       auto value = pairingHeap.top();
-      handles[value.nid] = typename AOPPairingHeap::handle_type();
+//      handles[value.nid] = typename AOPPairingHeap::handle_type();
+      handles.clear(value.nid);
       clock_t start;
       if(PerMethodStatClocks) {
         start = clock();
@@ -281,7 +296,8 @@ class DAryTester : public AOPTester<KeyType> {
 
   typedef boost::heap::d_ary_heap<AOHBoostNode<KeyType>, boost::heap::arity<AOPDAryArity>, boost::heap::mutable_<true>, boost::heap::compare<AOHBoostNode<KeyType>>> AOPDAryHeap;
   AOPDAryHeap DAryHeap;
-  std::unordered_map<int, typename AOPDAryHeap::handle_type> handles;
+//  std::unordered_map<int, typename AOPDAryHeap::handle_type> handles;
+  NodeID2Address<typename AOPDAryHeap::handle_type> handles;
 
 public:
   using AOPTester<KeyType>::startStatTime;
@@ -294,7 +310,7 @@ public:
     while(popOne()) {
       assert(0);
     }
-    handles.clear();
+//    handles.clear();
   }
   DAryTester() {
   }
@@ -314,32 +330,38 @@ public:
     if(PerMethodStatClocks) {
       SharedHeapManager().update(clock()-start, MethodMarkInsertType, getHeapMarkType());
     }
-    handles[nid] = handle;
+//    handles[nid] = handle;
+    handles.push(nid, handle);
   }
   
   bool elementExist(int& nid) {
-    return handles.count(nid) != 0;
-  }
+//    return handles.count(nid) != 0;
+    return handles.elementExist(nid);
+    }
   
   void decrease(int& nid, KeyType& keydlt) {
-    AOHBoostNode<KeyType> new_value = {(*(handles[nid])).key - keydlt, nid};
+    typename AOPDAryHeap::handle_type& handle = handles.get(nid);
+    AOHBoostNode<KeyType> new_value = {(*(handle)).key - keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
       start = clock();
     }
-    DAryHeap.decrease(handles[nid], new_value);
+//    DAryHeap.decrease(handles[nid], new_value);
+    DAryHeap.decrease(handle, new_value);
     if(PerMethodStatClocks) {
       SharedHeapManager().update(clock()-start, MethodMarkDecreaseType, getHeapMarkType());
     }
   }
   void increase(int& nid, KeyType& keydlt) {
-    auto key = (*(handles[nid])).key;//nid = 8879409,6166820,
+    typename AOPDAryHeap::handle_type& handle = handles.get(nid);
+    auto key = (*(handle)).key;//nid = 8879409,6166820,
     const AOHBoostNode<KeyType> new_value = {key + keydlt, nid};
     clock_t start;
     if(PerMethodStatClocks) {
       start = clock();
     }
-    DAryHeap.increase(handles[nid], new_value);
+//    DAryHeap.increase(handles[nid], new_value);
+    DAryHeap.increase(handle, new_value);
     if(PerMethodStatClocks) {
       SharedHeapManager().update(clock()-start, MethodMarkIncreaseType, getHeapMarkType());
     }
@@ -348,7 +370,8 @@ public:
   bool popOne() {
     if(!empty()) {
       auto value = DAryHeap.top();
-      handles.erase(value.nid);//[value.nid] =typename AOPDAryHeap::handle_type();
+//      handles.erase(value.nid);//[value.nid] =typename AOPDAryHeap::handle_type();
+      handles.clear(value.nid);
       clock_t start;
       if(PerMethodStatClocks) {
         start = clock();
@@ -572,7 +595,9 @@ class AOHeapTester : public AOPTester<KeyType> {
   int nodeSize;
   AOHeapOpt<KeyType> * aoHeap;
 //  AOHeap<KeyType> * aoHeap;
-  std::unordered_map<int, AOHeapNode<KeyType>*> NodePointer;
+//  std::unordered_map<int, AOHeapNode<KeyType>*> NodePointer;
+  NodeID2Address<AOHeapNode<KeyType>*> NodePointer;
+
 public:
   
   using AOPTester<KeyType>::startStatTime;
@@ -600,30 +625,34 @@ public:
   }
   void insert(KeyType& key, int& nid) {
     auto handle = aoHeap->insert(key, nid);
-    NodePointer[nid] = handle;
+//    NodePointer[nid] = handle;
+    NodePointer.push(nid, handle);
   }
   
   bool elementExist(int& nid) {
-    return NodePointer.count(nid) != 0;
+//    return NodePointer.count(nid) != 0;
+    return NodePointer.elementExist(nid);
   }
   
   void decrease(int& nid, KeyType& keydlt) {
     if(keydlt == 0) return;
-    AOHeapNode<KeyType>* node = NodePointer[nid];
+//    AOHeapNode<KeyType>* node = NodePointer[nid];
+    AOHeapNode<KeyType>* node = NodePointer.get(nid);
     //      best
-//    if(node->inBinaryHeap) {
-//      aoHeap->toModify(node);
-//    }
+    if(node->inBinaryHeap) {
+      aoHeap->toModify(node);
+    }
     node->key -= keydlt;
     aoHeap->decrease(node);
   }
   
   void increase(int& nid, KeyType& keydlt) {
-    AOHeapNode<KeyType>* node = NodePointer[nid];
+//    AOHeapNode<KeyType>* node = NodePointer[nid];
+    AOHeapNode<KeyType>* node = NodePointer.get(nid);
 //      best
-//    if(node->inBinaryHeap) {
-//      aoHeap->toModify(node);
-//    }
+    if(node->inBinaryHeap) {
+      aoHeap->toModify(node);
+    }
     node->key += keydlt;
     aoHeap->increase(node);
   }
@@ -638,10 +667,11 @@ public:
 //      printf("\n %d, num=%d ", node->key, nodeSize);
 //      printf("\n num=%d ", nodeSize);
       
-      NodePointer.erase(node->nid);
+//      NodePointer.erase(node->nid);
+      NodePointer.clear(node->nid);
       aoHeap->pop();
 //      best
-//      aoHeap->didModified();
+      aoHeap->didModified();
       return true;
     }
     return false;
