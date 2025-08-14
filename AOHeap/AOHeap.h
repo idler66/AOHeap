@@ -112,7 +112,7 @@ public:
 //static const int ConsolidateListSize = 16;
 //static const int ConsolidateListSize = 32;
 //static const int ConsolidateListSize = 64;
-//static const int ConsolidateListSize = 256;
+//static const int ConsolidateListSize = 10000001;
 static const int ConsolidateListSize = 64+32;
 static int counter = 0;
 static int operation = 0;

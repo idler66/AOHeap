@@ -71,19 +71,15 @@ private:
   }
   
   void insertionSort() {
-    std::sort(waitingList, waitingList + ElementPtr,
-                    [](const AOHeapNode<KeyType>* a, const AOHeapNode<KeyType>* b) {
-                        return a->key < b->key;
-                    });
-//    for (int i = 1; i < ElementPtr; i++) {
-//      AOHeapNode<KeyType> * node = waitingList[i];
-//      int j = i - 1;
-//      while (j >= 0 && waitingList[j]->key > node->key) {
-//        waitingList[j + 1] = waitingList[j];
-//        j--;
-//      }
-//      waitingList[j + 1] = node;
-//    }
+    for (int i = 1; i < ElementPtr; i++) {
+      AOHeapNode<KeyType> * node = waitingList[i];
+      int j = i - 1;
+      while (j >= 0 && waitingList[j]->key > node->key) {
+        waitingList[j + 1] = waitingList[j];
+        j--;
+      }
+      waitingList[j + 1] = node;
+    }
   }
   
   void linearConsolidate(int & minPtr) {
@@ -101,7 +97,14 @@ private:
 //      groups.push(node);
 //    }
 //    ElementPtr = 1;
-    insertionSort();
+
+    std::sort(waitingList, waitingList + ElementPtr,
+                    [](const AOHeapNode<KeyType>* a, const AOHeapNode<KeyType>* b) {
+                        return a->key < b->key;
+                    });  //
+//    insertionSort();
+    
+    
     int waitingIndex = 0;
     minPtr = 0;
     
@@ -117,6 +120,7 @@ private:
     ElementPtr = 1;
 //    if(root) push(root, minPtr);
     waitingList[0] = root;
+//    root->index = 0;
   }
   
   void consolidate(int & minPtr) {
@@ -169,6 +173,7 @@ public:
   
   void push(AOHeapNode<KeyType> * node, int& minPtr) {
     waitingList[ElementPtr] = node;
+//    node->index = ElementPtr;
     if(minPtr == -1) {
       minPtr = 0;
     } else if(waitingList[minPtr]->key > node->key) {
@@ -216,7 +221,6 @@ public:
   }
   
   AOHeapNode<KeyType> * updateMin(int& minPtr) {
-//    findMin(minPtr);
     AOHeapNode<KeyType> * oldMin = waitingList[minPtr];
     AOHeapNode<KeyType> * bro = oldMin->getBro();
     if(bro != NULL) {
@@ -229,6 +233,8 @@ public:
     if(next && bro) {
       if(bro->key > next->key) std::swap(bro, next);
       waitingList[minPtr] = bro;
+//      bro->index = minPtr;
+//      next->index = ElementPtr;
       waitingList[ElementPtr++] = next;
       if(ElementPtr == ConsolidateListSize) {
         consolidate(minPtr);
@@ -236,11 +242,14 @@ public:
       }
     }else if (next) {
       waitingList[minPtr] = next;
+//      next->index = minPtr;
     } else if(bro) {
       waitingList[minPtr] = bro;
+//      bro->index = minPtr;
     } else {
       ElementPtr-=1;
       waitingList[minPtr] = waitingList[ElementPtr];
+//      waitingList[minPtr]->index = minPtr;
     }
     findMin(minPtr);
     return oldMin;
@@ -366,7 +375,7 @@ public:
     } else  {//原树
       if(trees.getMin(MinPtr)->key > node->key) {
         trees.udpateMinPtr(node, MinPtr);
-//        trees.findMin(MinPtr);
+//        MinPtr = node->index;
       }
     }
   }
