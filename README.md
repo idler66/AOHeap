@@ -7,6 +7,8 @@ It is currently the best performing heap data structure.
 1）把生成的子树群，重新转化为多个标准子树。
 It breaks through the lower limit of the amortized time of Ω(logN) for the classic sorting of a single element.
 在上述两种操作下，该堆结构的所有操作的时间复杂度均为O(1)。
+ 
+通过next链上节点next和bro指针的旋转，所有操作的最差时间复杂度为O(log N)。
 
 ## License
 This project is licensed under the [LICENSE](LICENSE) file, which uses many elements of the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 license.
