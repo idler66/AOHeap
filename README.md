@@ -1,5 +1,5 @@
 # AOHeap
-AOHeap is the abbreviation of Adjacent Ordered Heap. 
+AOHeap is the abbreviation of Adjacent Ordered Heap. Its four core operations—insert, decrease-key, increase-key, and delete-min—achieve an amortized time complexity of O(1).
 It introduces the total order relationship between the parent node and the child node in the heap into the child nodes. 
 It is currently the best performing heap data structure.
  
